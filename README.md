@@ -25,4 +25,4 @@ If you have any questions or feedback, please feel free to get in touch by email
 [Bryan Fulghum](mailto:bfulghu2@charlotte.edu)  <br />
 [Madeline Bellanger](mailto:mbellang@charlotte.edu) <br />
 
-Or [open an issue](https://github.com/raw-lab/EpiVirQuant/issues). 
+Or [open an issue](https://github.com/raw-lab/epivirquant/issues). 
