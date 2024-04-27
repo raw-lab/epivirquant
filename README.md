@@ -9,9 +9,9 @@ Citing EpiVirQuant
 If you are publishing results obtained using EpiVirQuant
 
 BioRxiv
-Resolving and Quantifying Viral-Like Particles via Blind Deconvolution
-Figueroa III JL, Bellanger M, Fulghum B, Visscher PT, White III RA. 2024
-[BioRxiv](https://doi.org/10.1101/2024.04.21.590467) 
+Figueroa III JL, Bellanger M, Fulghum B, Visscher PT, White III RA. 2024  <br />
+Resolving and Quantifying Viral-Like Particles via Blind Deconvolution  <br />
+[BioRxiv](https://doi.org/10.1101/2024.04.21.590467)  <br />
 
 
 
