@@ -6,7 +6,13 @@ EpiVirQuant directly counts and measures the size of viral-like particles, bacte
 
 Citing EpiVirQuant
 -------------
-If you are publishing results obtained using EpiVirQuant, please cite: Manuscript in preparation.
+If you are publishing results obtained using EpiVirQuant
+
+BioRxiv
+Resolving and Quantifying Viral-Like Particles via Blind Deconvolution
+Figueroa III JL, Bellanger M, Fulghum B, Visscher PT, White III RA. 2024
+[BioRxiv](https://doi.org/10.1101/2024.04.21.590467) 
+
 
 
 Contact
@@ -17,4 +23,6 @@ If you have any questions or feedback, please feel free to get in touch by email
 [Dr. Richard Allen White III](mailto:rwhit101@uncc.edu)<br /> 
 [Jose Luis Figueroa III](mailto:jlfiguer@uncc.edu) <br />
 [Bryan Fulghum](mailto:bfulghu2@charlotte.edu)  <br />
+[Madeline Bellanger](mailto:mbellang@charlotte.edu) <br />
+
 Or [open an issue](https://github.com/raw-lab/EpiVirQuant/issues). 
