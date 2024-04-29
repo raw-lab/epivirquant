@@ -302,7 +302,7 @@ def main():
     optBox = np.zeros((args.fSize, args.fSize))
     PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
     print(" ")
-    print("Cyclops complete.")
+    print("EpiVirQuant complete.")
 
 if __name__ == "__main__":
     main()
