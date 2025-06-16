@@ -22,7 +22,10 @@ from scipy.spatial.distance import cdist
 from scipy import ndimage
 from pypher.pypher import psf2otf, zero_pad
 from stardist.models import StarDist2D
-import getVP
+import argparse
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
+from epivirquant_pairing import getVP
 
 __version__ = '0.1'
 __date__ = '04-07-2024'
@@ -31,11 +34,11 @@ __authors__ = 'Richard Allen White III & Jose Luis Figueroa III'
 parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
 required = parser.add_argument_group('Input file(s) required')
-required.add_argument('-c', '--config', help='Path to config file, command line takes priority', is_config_file=True)
+required.add_argument('-c', '--config', help='Path to config file, command line takes priority')
 required.add_argument('-i', '--input', action='append', default=[], help='Path to input image or folder containing images')
-required.add_argument('--dapi', action='append', default=[], help='Path to DAPI images')
-required.add_argument('--fitc', action='append', default=[], help='Path to FITC')
-required.add_argument('--calibration', action='append', default=[], help='Path to calibration image')
+required.add_argument('--dapi', action='append', default=[], help='Path to DAPI images directory')
+required.add_argument('--fitc', action='append', default=[], help='Path to FITC images directory')
+required.add_argument('--calibration', action='append', default=[], help='Path to calibration DAPI image')
 
 optional = parser.add_argument_group('optional arguments')
 optional.add_argument('--genFigs', type=bool, default=True, help='Toggle the generation of figures on (True) or off (False). [True]')
@@ -67,12 +70,44 @@ options are:
 optional.add_argument('--SM_constraint', type=int, default=8000, help="Set threshold of semi-major axis to determine false positives. [8000]")
 optional.add_argument('--train_split', type=float, default=0.8, help="""Set the desired training-testing split. The default is 0.8 which
 results in an 80% training data and 20% testing data split. This number is rounded if not divisible. [0.8]""")
-optional.add_argument('--outDir', type=str, default="Cyclops_Output", help="Set Cyclops output directory name. [Cyclops_Output]")
+optional.add_argument('--outDir', type=str, default="EpiVirQuant_Output", help="Set EpiVirQuant output directory name. [EpiVirQuant_Output]")
 optional.add_argument('--cpus', type=int, help="Number of CPUs to use per task. System will try to detect available CPUs if not specified [Auto Detect]")
 optional.add_argument('--version', '-v', action='version',
                     version=f'Cyclops: \n version: {__version__} {__date__}',
                     help='show the version number and exit')
 optional.add_argument("-h", "--help", action="help", help="show this help message and exit")
+
+def load_images(path_DAPI, path_FITC, path_CALIB):
+    fsep = os.sep
+    print("Initializing parameters and dirs...")
+    fpath1 = path_DAPI[0]
+    fpath2 = path_FITC[0]
+
+    fnamesXB = os.listdir(fpath1)
+    fnamesXG = os.listdir(fpath2)
+
+    fExtension = os.path.splitext(fnamesXB[0])[-1]
+
+    nCorr = len(fnamesXB)
+    nF = len(fnamesXG)
+    print("Loading images from DAPI and FITC dirs...")
+    XBfnames = [f"{fpath1}{fsep}{name}" for name in fnamesXB]
+    XBsnames = [name[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXB]
+    XB0 = [img_as_float(io.imread(fname)) for fname in XBfnames]
+    XGfnames = [f"{fpath2}{fsep}{name}" for name in fnamesXG]
+    XGsnames = [name[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXG]
+    XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
+    fpath3 = path_CALIB[0]
+  
+    fnameVP = os.listdir(fpath3)[0]
+    caliPath = f"{fpath3}{fsep}{fnameVP}"
+    currVP = io.imread(caliPath)
+    XBVP = img_as_float(currVP)
+    snameVP = fnameVP[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+")
+    print(f"Number of DAPI images: {nCorr}")
+    print(f"Number of FITC images: {nF}")
+    print("Initialization complete.\n")
+    return XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF
 
 args = parser.parse_args()
 
@@ -88,11 +123,10 @@ eps = np.finfo(float).eps
 corrCell = []
 
 px2nm = args.scaleMetric / args.scaleLength
-
-[XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF] = init.loadImages(args.dapi, args.fitc, args.calibration)
+[XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF] = load_images(args.dapi, args.fitc, args.calibration)
 getVP.getVP(args.outDir, snameVP, XBVP, args.pad)
 
-# Create Cyclops output directory if it doesn't exist
+# Create output directory if it doesn't exist
 if os.path.exists(outDir):
     shutil.rmtree(outDir)
 os.mkdir(outDir)
@@ -101,31 +135,6 @@ eps = np.finfo(float).eps  # Machine epsilon
 corrCell = []  # List for correction factors
 px2nm = scaleMetric / scaleLength  # Nanometers-per-pixel ratio
 
-def load_images(path_DAPI, path_FITC, path_CALIB):
-    fsep = os.sep
-    print("Initializing Cyclops parameters and dirs...")
-    fpath1 = f"Cyclops_Data{fsep}XB"
-    fpath2 = f"Cyclops_Data{fsep}XG"
-    fnamesXB = os.listdir(fpath1)
-    fnamesXG = os.listdir(fpath2)
-    nCorr = len(fnamesXB)
-    nF = len(fnamesXG)
-    print("Loading images from XB and XG dirs...")
-    XBfnames = [f"{fpath1}{fsep}{name}" for name in fnamesXB]
-    XBsnames = [name[:-5].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXB]
-    XB0 = [img_as_float(io.imread(fname)) for fname in XBfnames]
-    XGfnames = [f"{fpath2}{fsep}{name}" for name in fnamesXG]
-    XGsnames = [name[:-5].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXG]
-    XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
-    fpath3 = f"Cyclops_Data{fsep}Calibration"
-    fnameVP = os.listdir(fpath3)[0]
-    caliPath = f"{fpath3}{fsep}{fnameVP}"
-    currVP = io.imread(caliPath)
-    XBVP = img_as_float(currVP)
-    print(f"Number of DAPI images: {nCorr}")
-    print(f"Number of FITC images: {nF}")
-    print("Cyclops initialization complete.\n")
-    return XB0, XG0, XBVP, currVP[:-5].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+"), nCorr, XBsnames, XGsnames, nF
 
 def plot_distribution(testBox, path, fname, fsep):
     sz = np.shape(testBox)
