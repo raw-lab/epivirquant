@@ -31,7 +31,7 @@ def getVP(outDir, snameVP, XBVP, pad):
     start = time.time()
     threshold = threshold_otsu(XBVP)
     otsuMask = XBVP > threshold
-    
+    print(XBVP > threshold)
     plt.figure("XB-" + snameVP + ": Otsu mask")
     plt.imshow(otsuMask, cmap='gray')
     plt.title("XB-" + snameVP + ": Otsu mask")
@@ -61,8 +61,8 @@ def getVP(outDir, snameVP, XBVP, pad):
             if 0 < dist <= dConstraint:
                 dIdx.append(j)
                 proxVec.append(float(dist))
-    
-    proxVec = proxVec[1::2]
+    print(proxVec) 
+    proxVec = proxVec[1::2] #attempts to de duplicate distances
     dIdx = np.array(dIdx)
     numVPs = len(dIdx) // 2
     
@@ -77,8 +77,9 @@ def getVP(outDir, snameVP, XBVP, pad):
     VPcoords = [np.concatenate((bBox[dIdx[k]], bBox[dIdx[k+1]])) for k in VPidx]
     
     VPs = []
-    VPcent = [np.concatenate((cVec[n], cVec[n+1])) for n in range(0, len(cVec), 2)]
-    
+    #changed len(cVec) to len(cVec)-1
+    VPcent = [np.concatenate((cVec[n], cVec[n+1])) for n in range(0, len(cVec)-1, 2)]
+    print(type(VPcoords))
     for VPtemp in VPcoords:
         xVPmax = int(np.max(VPtemp[:, 3])) + pad
         xVPmin = int(np.min(VPtemp[:, 1])) - pad
@@ -120,9 +121,9 @@ def getVP(outDir, snameVP, XBVP, pad):
     print('\no-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
 
 # Example usage:
-out_directory = "output"
+out_directory = "EpiVirQuant_Output"
 sample_name = "sample"
 XBVP_data = np.random.rand(100, 100)
 padding = 5
-getVP(out_directory, sample_name, XBVP_data, padding)
+#getVP(out_directory, sample_name, XBVP_data, padding)
 

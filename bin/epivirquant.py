@@ -93,15 +93,15 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     print("Loading images from DAPI and FITC dirs...")
     XBfnames = [f"{fpath1}{fsep}{name}" for name in fnamesXB]
     XBsnames = [name[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXB]
-    XB0 = [img_as_float(io.imread(fname)) for fname in XBfnames]
+    XB0 = [img_as_float(io.imread(fname)[:, : , 2]) for fname in XBfnames]
     XGfnames = [f"{fpath2}{fsep}{name}" for name in fnamesXG]
     XGsnames = [name[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXG]
-    XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
+    XG0 = [img_as_float(io.imread(fname)[:, :, 1]) for fname in XGfnames]
     fpath3 = path_CALIB[0]
   
     fnameVP = os.listdir(fpath3)[0]
     caliPath = f"{fpath3}{fsep}{fnameVP}"
-    currVP = io.imread(caliPath)
+    currVP = io.imread(caliPath)[:, :, 2]
     XBVP = img_as_float(currVP)
     snameVP = fnameVP[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+")
     print(f"Number of DAPI images: {nCorr}")
@@ -124,7 +124,7 @@ corrCell = []
 
 px2nm = args.scaleMetric / args.scaleLength
 [XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF] = load_images(args.dapi, args.fitc, args.calibration)
-getVP.getVP(args.outDir, snameVP, XBVP, args.pad)
+getVP(args.outDir, snameVP, XBVP, args.pad)
 
 # Create output directory if it doesn't exist
 if os.path.exists(outDir):
