@@ -26,10 +26,38 @@ import argparse
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 from epivirquant_pairing import getVP
+from epivirquant_decon import decon
 
 __version__ = '0.1'
 __date__ = '04-07-2024'
 __authors__ = 'Richard Allen White III & Jose Luis Figueroa III'
+
+def main():
+    args = parser.parse_args()
+
+    ct = datetime.datetime.now()
+    cTime = ct.strftime("%m-%d-%Y %H:%M:%S")
+    cTime2 = ct.strftime("%m-%d-%Y_%H-%M-%S")
+
+    if os.path.exists(args.outDir):
+        shutil.rmtree(args.outDir)
+    os.mkdir(args.outDir)
+
+    #eps = np.finfo(float).eps
+    #corrCell = []
+
+    #px2nm = args.scaleMetric / args.scaleLength
+ 
+    #eps = np.finfo(float).eps  # Machine epsilon
+    #corrCell = []  # List for correction factors
+    #px2nm = scaleMetric / scaleLength  # Nanometers-per-pixel ratio
+    XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
+    optBox = getVP(args.outDir, snameVP, XBVP, args.pad)
+    decon(args.outDir, optBox)
+    #PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
+    #PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
+    print(" ")
+    print("EpiVirQuant complete.")
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
@@ -99,42 +127,16 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
     fpath3 = path_CALIB[0]
   
-    fnameVP = os.listdir(fpath3)[0]
-    caliPath = f"{fpath3}{fsep}{fnameVP}"
-    currVP = io.imread(caliPath)
+    #fnameVP = os.listdir(fpath3)[0]
+    #caliPath = f"{fpath3}{fsep}{fpath3}"
+    currVP = io.imread(fpath3)
     XBVP = img_as_float(currVP)
-    snameVP = fnameVP[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+")
+    #snameVP = fnameVP[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+")
+    snameVP = fpath3.split(fsep)[-1].replace(" ", "").replace("bluebeads ", "BB-")
     print(f"Number of DAPI images: {nCorr}")
     print(f"Number of FITC images: {nF}")
     print("Initialization complete.\n")
     return XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF
-
-args = parser.parse_args()
-
-ct = datetime.datetime.now()
-cTime = ct.strftime("%m-%d-%Y %H:%M:%S")
-cTime2 = ct.strftime("%m-%d-%Y_%H-%M-%S")
-
-if os.path.exists(args.outDir):
-    shutil.rmtree(args.outDir)
-os.mkdir(args.outDir)
-
-eps = np.finfo(float).eps
-corrCell = []
-
-px2nm = args.scaleMetric / args.scaleLength
-[XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF] = load_images(args.dapi, args.fitc, args.calibration)
-getVP(args.outDir, snameVP, XBVP, args.pad)
-
-# Create output directory if it doesn't exist
-if os.path.exists(args.outDir):
-    shutil.rmtree(args.outDir) #?
-os.mkdir(args.outDir)
-
-eps = np.finfo(float).eps  # Machine epsilon
-corrCell = []  # List for correction factors
-px2nm = scaleMetric / scaleLength  # Nanometers-per-pixel ratio
-
 
 def plot_distribution(testBox, path, fname, fsep):
     sz = np.shape(testBox)
@@ -301,17 +303,7 @@ def plot_3D_PSFi(PSFi, path, fname, fsep):
     plt.savefig(f"{path}{fsep}{fname}_3D_Plot_PSFi")
     plt.close('all')
     return XB, XG, PSFi
-    
-def main():
-    path_DAPI = args.dapi[0]
-    path_FITC = args.fitc[0]
-    path_CALIB = args.calibration[0]
-    XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(path_DAPI, path_FITC, path_CALIB)
-    PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
-    optBox = np.zeros((args.fSize, args.fSize))
-    PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
-    print(" ")
-    print("EpiVirQuant complete.")
+
 
 if __name__ == "__main__":
     main()
