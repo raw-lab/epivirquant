@@ -53,7 +53,7 @@ def main():
     #px2nm = scaleMetric / scaleLength  # Nanometers-per-pixel ratio
     XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
     optBox = getVP(args.outDir, snameVP, XBVP, args.pad)
-    decon(args.outDir, optBox)
+    decon(args.outDir, optBox, args.tau)
     #PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
     #PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
     print(" ")
@@ -127,12 +127,9 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
     fpath3 = path_CALIB[0]
   
-    #fnameVP = os.listdir(fpath3)[0]
-    #caliPath = f"{fpath3}{fsep}{fpath3}"
     currVP = io.imread(fpath3)
     XBVP = img_as_float(currVP)
-    #snameVP = fnameVP[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+")
-    snameVP = fpath3.split(fsep)[-1].replace(" ", "").replace("bluebeads ", "BB-")
+    snameVP = fpath3.split(fsep)[-1].replace(" ", "").replace("bluebeads ", "BB-")[:-len(fExtension)]
     print(f"Number of DAPI images: {nCorr}")
     print(f"Number of FITC images: {nF}")
     print("Initialization complete.\n")
