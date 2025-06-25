@@ -31,7 +31,6 @@ def getVP(outDir, snameVP, XBVP, pad):
     start = time.time()
     threshold = threshold_otsu(XBVP)
     otsuMask = XBVP > threshold
-    print(XBVP > threshold)
     plt.figure("XB-" + snameVP + ": Otsu mask")
     plt.imshow(otsuMask, cmap='gray')
     plt.title("XB-" + snameVP + ": Otsu mask")
@@ -61,7 +60,6 @@ def getVP(outDir, snameVP, XBVP, pad):
             if 0 < dist <= dConstraint:
                 dIdx.append(j)
                 proxVec.append(float(dist))
-    print(proxVec) 
     proxVec = proxVec[1::2] #attempts to de duplicate distances
     dIdx = np.array(dIdx)
     numVPs = len(dIdx) // 2
@@ -79,7 +77,6 @@ def getVP(outDir, snameVP, XBVP, pad):
     VPs = []
     #changed len(cVec) to len(cVec)-1
     VPcent = [np.concatenate((cVec[n], cVec[n+1])) for n in range(0, len(cVec)-1, 2)]
-    print(type(VPcoords))
     for VPtemp in VPcoords:
         xVPmax = int(np.max(VPtemp[3])) + pad
         xVPmin = int(np.min(VPtemp[1])) - pad
@@ -118,6 +115,7 @@ def getVP(outDir, snameVP, XBVP, pad):
     stop = time.time() - start
     print(f"\nStep 1 end: {round(stop, 4)} seconds")
     print('\no-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
+    return optBox
 
 # Example usage:
 out_directory = "EpiVirQuant_Output"
