@@ -81,10 +81,10 @@ def getVP(outDir, snameVP, XBVP, pad):
     VPcent = [np.concatenate((cVec[n], cVec[n+1])) for n in range(0, len(cVec)-1, 2)]
     print(type(VPcoords))
     for VPtemp in VPcoords:
-        xVPmax = int(np.max(VPtemp[:, 3])) + pad
-        xVPmin = int(np.min(VPtemp[:, 1])) - pad
-        yVPmax = int(np.max(VPtemp[:, 2])) + pad
-        yVPmin = int(np.min(VPtemp[:, 0])) - pad
+        xVPmax = int(np.max(VPtemp[3])) + pad
+        xVPmin = int(np.min(VPtemp[1])) - pad
+        yVPmax = int(np.max(VPtemp[2])) + pad
+        yVPmin = int(np.min(VPtemp[0])) - pad
         VP = XBVP[yVPmin:yVPmax, xVPmin:xVPmax]
         threshold = threshold_otsu(VP)
         otsuMask = VP > threshold
@@ -96,8 +96,7 @@ def getVP(outDir, snameVP, XBVP, pad):
     dMin = np.argmin(proxVec)
     VP0 = VPs[dMin]
     
-    x1, y1 = VPcent[0][0]
-    x2, y2 = VPcent[0][1]
+    x1, y1, x2, y2 = VPcent[0]
     m = (y2 - y1) / (x2 - x1)
     bSlope = y1 - (m * x1)
     theta0 = np.arctan(m / 1) * (180 / np.pi)
