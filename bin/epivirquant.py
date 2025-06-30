@@ -19,7 +19,7 @@ from skimage.feature import graycomatrix, graycoprops
 from skimage.measure import shannon_entropy
 from skimage import img_as_ubyte
 from scipy.spatial.distance import cdist
-from scipy import ndimage
+from scipy.ndimage import gaussian_filter
 from pypher.pypher import psf2otf, zero_pad
 from stardist.models import StarDist2D
 import argparse
@@ -42,7 +42,7 @@ def main():
     if os.path.exists(args.outDir):
         shutil.rmtree(args.outDir)
     os.mkdir(args.outDir)
-
+    fsep = os.sep
     #eps = np.finfo(float).eps
     #corrCell = []
 
@@ -53,9 +53,10 @@ def main():
     #px2nm = scaleMetric / scaleLength  # Nanometers-per-pixel ratio
     XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
     optBox = getVP(args.outDir, snameVP, XBVP, args.pad)
-    decon(args.outDir, optBox, args.tau)
-    #PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
-    #PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
+    
+    decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
+    PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
+    PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
     print(" ")
     print("EpiVirQuant complete.")
 
@@ -166,6 +167,7 @@ def create_PSF(fSize, a, b, sigma, r, tau, v, s, psfMethod):
     if psfMethod == "gam":
         for i in range(fSize):
             for j in range(fSize):
+                #equation 6
                 PSFi[i, j] = a * np.exp(v / ((math.gamma(1 + tau * R[i, j])) * (math.gamma(1 - tau * R[i, j])))) + s
     elif psfMethod == "gau":
         PSFi = gaussian_filter(np.exp(-(np.square(x) + np.square(y)) / (2. * (sigma ** 2))), sigma)
