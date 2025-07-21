@@ -74,7 +74,7 @@ optional.add_argument('--genFigs', type=bool, default=True, help='Toggle the gen
 optional.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
 optional.add_argument('--scaleLength', type=float, default=585, help='Length of scale bar for imaging equipment in pixels (px). [585]')
 optional.add_argument('--scaleMetric', type=float, default=20e3, help="Represented length of scale bar in nm.")
-optional.add_argument('--pad', type=int, default=12, help="Set padding around VP centroids to expand bounding box. [12]")
+optional.add_argument('--pad', type=int, default=14, help="Set padding around VP centroids to expand bounding box. [14od]")
 optional.add_argument('--dConstraint', type=int, default=30, help="Set user-defined px distance constraint for VP candidates. [30]")
 optional.add_argument('--fSize', type=int, default=31, help="Set dimensions of hybrid point-spread function, fSize-by-fSize. [31]")
 optional.add_argument('--psfMethod', type=str, default='gam', choices=['gam', 'hyb', 'gau'], help="Set formula for point-spread function creation. The available options are: 'gam' (gamma sinc fn); 'hyb' (hybrid sinc fn); and 'gau' (gaussian). [gam]")

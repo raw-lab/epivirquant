@@ -15,32 +15,28 @@ import math
 from skimage import img_as_ubyte
 from skimage.measure import shannon_entropy
 from skimage.feature import graycomatrix, graycoprops
-
+eps = np.finfo(float).eps 
 
 def create_PSF(fSize, a, b, sigma, r, tau, v, s, psfMethod):
     x = np.linspace(-fSize, fSize, fSize)
     y = np.linspace(-fSize, fSize, fSize)
     x, y = np.meshgrid(x, y)
     PSFi = np.zeros((fSize, fSize))
-    print(np.square(x))
     R = np.sqrt(np.square(x) + np.square(y))
     if psfMethod == "gam":
         for i in range(fSize):
             for j in range(fSize):
                 #equation 6
                 PSFi[i, j] = a * np.exp(v / ((math.gamma(1 + tau * R[i, j])) * (math.gamma(1 - tau * R[i, j])))) + s
-    elif psfMethod == "gau":
-        PSFi = gaussian_filter(np.exp(-(np.square(x) + np.square(y)) / (2. * (sigma ** 2))), sigma)
-    elif psfMethod == "snc":
-        for i in range(fSize):
-            for j in range(fSize):
-                PSFi[i, j] = (np.divide(np.sin(tau * R[i, j]), tau * R[i, j]))
+        sumPSF = PSFi.sum()
+        if sumPSF != 0:
+            PSFi /= sumPSF
     return PSFi, x, y
 
 def get_MLE(optBox, fSize, PSFi, nMLE_iter):
     L, dim = optBox.shape
-    J = [optBox,optBox,0,np.zeros((L*dim,2))]    # Populate image set                     #
-    P = [PSFi,PSFi,0,np.zeros((fSize*fSize,2))]  # Populate PSF set   
+    J = [optBox,optBox,0,np.zeros((L*dim,2))]
+    P = [PSFi,PSFi,0,np.zeros((fSize*fSize,2))]   
     fw = np.fft.fft2(np.ones((L, dim)))
     nMLE_iter = 10  # Set desired number of MLE iterations (default 10)
     for k in range(nMLE_iter):
@@ -52,7 +48,8 @@ def get_MLE(optBox, fSize, PSFi, nMLE_iter):
         Psi_k = np.fft.fft2(currEst)
         J[2] = J[1]
         OTF = psf2otf(P[1], (L, dim))
-        scale = np.real(np.fft.ifft2(np.conj(OTF) * fw)) + np.sqrt(np.finfo(scale.dtype).eps)
+
+        scale = np.real(np.fft.ifft2(np.conj(OTF) * fw)) + np.sqrt(eps)
         OTFtemp = np.fft.ifft2(np.conj(OTF) * Psi_k)
         J[1] = np.maximum((J_k * np.real(OTFtemp) / scale), 0)
         J_k_flat = np.ndarray.flatten(J_k, order='F')
@@ -63,8 +60,8 @@ def get_MLE(optBox, fSize, PSFi, nMLE_iter):
         P[2] = P[1]
         Jfreq = np.fft.fft2(J[2])
         OTF_k = np.conj(Jfreq) * fw
-        scale = otf2psf(OTF_k, fSize) + np.sqrt(np.finfo(scale.dtype).eps)
-        Jfreq_k = otf2psf(np.conj(Jfreq) * Psi_k, fSize)
+        scale = otf2psf(OTF_k, fSize) + np.sqrt(eps)
+        Jfreq_k = otf2psf(np.conj(Jfreq) * Psi_k, fSize)+ np.sqrt(eps)
         P[1] = np.maximum((P_k * Jfreq_k) / scale, 0)
         P[1] = P[1] / np.sum(P[1])
         P_flat = np.ndarray.flatten(P[1], order='F')
@@ -79,17 +76,17 @@ def get_MLE(optBox, fSize, PSFi, nMLE_iter):
 
 def update_MLE(J, P, k):
     if k != 0:
-        alpha_k_J = (J[3][:, 0].T @ J[3][:, 1]) / (J[3][:, 1].T @ J[3][:, 1] + np.finfo(alpha_k_J.dtype).eps)
+        alpha_k_J = (J[3][0:, 0].T @ J[3][0:, 1]) / (J[3][0:, 1].T @ J[3][0:, 1] + eps)
         alpha_k_J = np.maximum(np.minimum(alpha_k_J, 0), 0)
         J_k = np.maximum(J[1] + alpha_k_J * (J[1] - J[2]), 0)
-        alpha_k_P = (P[3][:, 0].T @ P[3][:, 1]) / (P[3][:, 1].T @ P[3][:, 1] + np.finfo(alpha_k_P.dtype).eps)
+        alpha_k_P = (P[3][:, 0].T @ P[3][:, 1]) / (P[3][:, 1].T @ P[3][:, 1] + eps)
         alpha_k_P = np.maximum(np.minimum(alpha_k_P, 0), 0)
         P_k = np.maximum(P[1] + alpha_k_P * (P[1] - P[2]), 0)
         P_k = P_k / np.sum(P_k)
     else:
         J_k = np.maximum(J[1], 0)
         P_k = np.maximum(P[1], 0)
-        P_k = P_k / (np.sum(P_k) + np.finfo(P_k.dtype).eps)
+        P_k = P_k / (np.sum(P_k) + eps)
     return J_k, P_k
 
 def otf2psf(OTF, fSize):
@@ -113,6 +110,55 @@ def opt_metrics(Xdec, entVec, energyVec):
     energyVec.append(energy)
     return entVec, energyVec
 
+def getTextures(Xdec,currOutDir):
+    L = np.size(Xdec,0)          # Get length of current Xdec
+    dim = np.size(Xdec,1)        # Get dim of current Xdec
+    [x,y] = np.mgrid[0:L,0:dim]  # Create grid for surface plot
+    f = plt.figure(); ax = f.add_subplot(projection='3d')
+    ax.plot_surface(x,y,Xdec,rstride=1,cstride=1,cmap="turbo",linewidth=2)
+    ax.view_init(9.25,0)         # Rotate surface
+    plt.xlabel("Y (px)",fontsize=7), plt.ylabel("X (px)",fontsize=7)
+    plt.tick_params(axis='both',labelsize=8)
+    ax.set_zlabel("Intensity (arb. unit)",fontsize=7)
+    plt.title("Final Virgilian Pair intensity textures"), plt.show()
+    plt.savefig(currOutDir+os.sep+"VP_final_textures.png",dpi=300)
+    plt.close('all')             # Close all open figures
+
+def genPSFOTF(PSF,currOutDir):
+    L = np.size(PSF,0)           # Get length of current OTF
+    dim = np.size(PSF,1)         # Get dim of current OTF
+    [x,y] = np.mgrid[0:L,0:dim]  # Create grid for surface plot
+    f1 = plt.figure(); ax = f1.add_subplot(projection='3d')
+    ax.plot_surface(x,y,PSF,rstride=1,cstride=1,cmap="coolwarm",linewidth=2)
+    plt.ylabel("Y"); plt.xlabel("X"); ax.set_zlabel("h(x,y)")
+    plt.title("Final point-spread function"), plt.show()
+    plt.savefig(currOutDir+os.sep+"PSF_final.png",dpi=150)
+    plt.close('all')             # Close all open figures
+    OTF = psf2otf(PSF,(L,dim))   # Convert PSF to OTF
+    f2 = plt.figure(); ax = f2.add_subplot(projection='3d')
+    ax.plot_surface(x,y,np.real(OTF),rstride=1,cstride=1,cmap="RdYlBu",linewidth=2)
+    plt.ylabel("Y"); plt.xlabel("X"); ax.set_zlabel("Z")
+    plt.title("Final optical transfer function"), plt.show()
+    plt.savefig(currOutDir+os.sep+"OTF_final.png",dpi=150)                                  
+    plt.close('all')             # Close all open figures
+
+def logDecon(outDir,Count,optStop,minS,maxE,minSE,fSize,tau,v):
+    with open(outDir+os.sep+"Step-2_Decon"+os.sep+"deconLog.txt",'w+') as deconLog:
+        deconLog.write("|>==============================================<| \n")
+        deconLog.write("|>================= CyDecon Log ================<| \n")
+        deconLog.write("Number of sweeps: "+str(Count)+" \n")
+        deconLog.write("Sweep rate        "+str(Count/optStop)+" sweeps/second \n")
+        deconLog.write("Optimal PSF selected: \n")
+        deconLog.write("  Minimum entropy: "+str(minS)+" bits \n")
+        deconLog.write("  Max GLCM energy: "+str(maxE)+" \n")
+        deconLog.write("  min(S - E):      "+str(minSE)+" \n")
+        deconLog.write("Final PSF parameters: \n")
+        deconLog.write("  Filter size: "+str(fSize)+"-by-"+str(fSize)+" \n")
+        deconLog.write("  tau:         "+str(tau)+" \n")
+        deconLog.write("  v:           "+str(v)+" \n")
+        deconLog.write("|>==============================================<| \n")
+        deconLog.write("|................................................| \n")  
+
 def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     out_dir = outDir + os.sep + "Step-2_Decon"
 
@@ -128,13 +174,16 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     if f_max % 2 == 0:
         f_max -= 1
 
-    filters = np.arange(3, f_max, 2)
+    filters = np.arange(3, f_max+1, 2)
     ent_vec = []
     energy_vec = []
     count = 0
     psf_params = []
     b_vec = []
     psf_vec = []
+    #formula 7
+    tau_vec = np.arange(0, 1/(10*math.pi), 1/(100*math.pi))
+    v_vec = np.arange(0, 1*math.pi, 1/10*math.pi)
     opt_count = 1
     curr_out_dir = os.path.join(out_dir, "optimization")
 
@@ -142,7 +191,9 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
         os.mkdir(curr_out_dir)
 
     opt_start = time.time()
-
+    TEMPCOUNT = 0
+    tau = tau_vec[0]
+    v = v_vec[0]
     for f_size in filters:
         tau = round(tau, 10)
         v = round(v, 10)
@@ -152,8 +203,8 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
         ent_vec, energy_vec = opt_metrics(Xdec, ent_vec, energy_vec)
         count += 1
         psf_params.append([f_size, tau, v, s])
-        print(psf_params)
-        for tau in tauVec:
+        TEMPCOUNT+=1
+        for tau in tau_vec:
             tau = round(tau, 10)
             v = round(v, 10)
             print(f"fSize: {f_size}; tau: {tau}; v: {v}")
@@ -163,7 +214,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
             count += 1
             psf_params.append([f_size, tau, v, s])
 
-            for v in vVec:
+            for v in v_vec:
                 tau = round(tau, 10)
                 v = round(v, 10)
                 print(f"fSize: {f_size}; tau: {tau}; v: {v}")
@@ -188,7 +239,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
 
     print("Optimal PSF selected:")
     print(f"  Minimum entropy: {minS} bits")
-    print(f"  GLCM energy: {maxE[0, 0]}")
+    print(f"  GLCM energy: {maxE}")
 
     opt_params = psf_params[minSidx]
     f_size = opt_params[0]
@@ -225,8 +276,8 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
 
     getTextures(Xdec, curr_out_dir)
     genPSFOTF(PSF, curr_out_dir)
-    getDist(optBox, curr_out_dir, "B-measure_initial.png", os.sep)
-    getDist(Xdec, curr_out_dir, "B-measure_final.png", os.sep)
+    #getDist(optBox, curr_out_dir, "B-measure_initial.png", os.sep)
+    #getDist(Xdec, curr_out_dir, "B-measure_final.png", os.sep)
 
     fig, axes = plt.subplots(1, 2)
     axes[0].imshow(optBox, cmap="gray")
@@ -238,10 +289,10 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     axes[1].set_ylabel("Y (px)")
     axes[1].set_title("Final optimization box")
     plt.subplots_adjust(left=0.08, right=0.99, bottom=0.01, top=0.99)
-    plt.savefig(outDir + os.sep + "Step-2_CyDecon" + os.sep + "InitialVsFinal_optBox.png", dpi=300)
+    plt.savefig(outDir + os.sep + "Step-2_Decon" + os.sep + "InitialVsFinal_optBox.png", dpi=300)
     plt.close('all')
-
-    logDecon(outDir, os.sep, count, opt_stop, minS, maxE, f_size, tau, v)
+        #def logDecon(outDir,Count,optStop,minS,maxE,minSE,fSize,tau,v):
+    logDecon(outDir, count, opt_stop, minS, maxE, f_size, tau, v)
     stop = time.time() - start_time
     print(f"Step 2 end: {round(stop, 4)} seconds")
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
