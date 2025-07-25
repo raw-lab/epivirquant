@@ -303,4 +303,5 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     stop = time.time() - start_time
     print(f"Step 2 end: {round(stop, 4)} seconds")
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
+    return PSF
 

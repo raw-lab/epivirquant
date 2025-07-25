@@ -27,6 +27,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 from epivirquant_pairing import getVP
 from epivirquant_decon import decon
+from epivirquant_calibration import get_corrolation
 
 __version__ = '0.1'
 __date__ = '04-07-2024'
@@ -54,9 +55,13 @@ def main():
     XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
     optBox = getVP(args.outDir, snameVP, XBVP, args.pad)
     
-    decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
-    PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
-    PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
+    PSF = decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
+    px2nm = args.scaleMetric / args.scaleLength 
+    #outDir, PSF, nLR_iter, szMetric, px2nm, corrPath, XB0, XBsnames, nCorr, sphereSize
+    CORR = get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize)
+    
+    #PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
+    #PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
     print(" ")
     print("EpiVirQuant complete.")
 
