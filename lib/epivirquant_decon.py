@@ -101,14 +101,19 @@ def otf2psf(OTF, fSize):
         PSF = PSF[0:fSize, 0:fSize]
     return PSF
 
-def opt_metrics(Xdec, entVec, energyVec):
+def opt_metrics(Xdec, entVec, energyVec, SEvec):
     Xdec_uint = img_as_ubyte(Xdec)
     S = shannon_entropy(Xdec_uint, base=2)
     entVec.append(S)
     GLCM = graycomatrix(Xdec_uint, [2], [0], symmetric=True, normed=True)
     energy = graycoprops(GLCM, "energy")[0, 0]
     energyVec.append(energy)
-    return entVec, energyVec
+    if S > energy:
+        SE = S - energy
+    else:
+        SE = energy - S
+    SEvec.append(SE)
+    return entVec, energyVec, SEvec
 
 def getTextures(Xdec,currOutDir):
     L = np.size(Xdec,0)          # Get length of current Xdec
@@ -177,6 +182,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     filters = np.arange(3, f_max+1, 2)
     ent_vec = []
     energy_vec = []
+    SEvec = []
     count = 0
     psf_params = []
     b_vec = []
@@ -200,7 +206,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
         print(f"fSize: {f_size}; tau: {tau}; v: {v}")
         PSFi, X, Y = create_PSF(f_size, a, b, sig, r, tau, v, s, psfMethod)
         PSFr, Xdec = get_MLE(optBox, f_size, PSFi, nMLE_iter)
-        ent_vec, energy_vec = opt_metrics(Xdec, ent_vec, energy_vec)
+        ent_vec, energy_vec, SEvec = opt_metrics(Xdec, ent_vec, energy_vec, SEvec)
         count += 1
         psf_params.append([f_size, tau, v, s])
         TEMPCOUNT+=1
@@ -210,7 +216,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
             print(f"fSize: {f_size}; tau: {tau}; v: {v}")
             PSFi, X, Y = create_PSF(f_size, a, b, sig, r, tau, v, s, psfMethod)
             PSFr, Xdec = get_MLE(optBox, f_size, PSFi, nMLE_iter)
-            ent_vec, energy_vec = opt_metrics(Xdec, ent_vec, energy_vec)
+            ent_vec, energy_vec, SEvec = opt_metrics(Xdec, ent_vec, energy_vec, SEvec)
             count += 1
             psf_params.append([f_size, tau, v, s])
 
@@ -220,7 +226,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
                 print(f"fSize: {f_size}; tau: {tau}; v: {v}")
                 PSFi, X, Y = create_PSF(f_size, a, b, sig, r, tau, v, s, psfMethod)
                 PSFr, Xdec = get_MLE(optBox, f_size, PSFi, nMLE_iter)
-                ent_vec, energy_vec = opt_metrics(Xdec, ent_vec, energy_vec)
+                ent_vec, energy_vec, SEvec = opt_metrics(Xdec, ent_vec, energy_vec, SEvec)
                 count += 1
                 psf_params.append([f_size, tau, v, s])
 
@@ -236,6 +242,8 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     minS = ent_vec[minSidx]
     maxEidx = np.argmax(energy_vec)
     maxE = energy_vec[maxEidx]
+    minSEidx = np.argmin(SEvec)
+    minSE = SEvec[minSEidx]
 
     print("Optimal PSF selected:")
     print(f"  Minimum entropy: {minS} bits")
@@ -291,8 +299,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     plt.subplots_adjust(left=0.08, right=0.99, bottom=0.01, top=0.99)
     plt.savefig(outDir + os.sep + "Step-2_Decon" + os.sep + "InitialVsFinal_optBox.png", dpi=300)
     plt.close('all')
-        #def logDecon(outDir,Count,optStop,minS,maxE,minSE,fSize,tau,v):
-    logDecon(outDir, count, opt_stop, minS, maxE, f_size, tau, v)
+    logDecon(outDir, count, opt_stop, minS, maxE, minSE, f_size, tau, v)
     stop = time.time() - start_time
     print(f"Step 2 end: {round(stop, 4)} seconds")
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
