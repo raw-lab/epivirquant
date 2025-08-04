@@ -28,6 +28,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'l
 from epivirquant_pairing import getVP
 from epivirquant_decon import decon
 from epivirquant_calibration import get_corrolation
+from epivirquant_masks import generate_masks
 
 __version__ = '0.1'
 __date__ = '04-07-2024'
@@ -60,6 +61,8 @@ def main():
     #outDir, PSF, nLR_iter, szMetric, px2nm, corrPath, XB0, XBsnames, nCorr, sphereSize
     CORR = get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize)
     
+    generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint, args.train_split)
+
     #PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
     #PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
     print(" ")
