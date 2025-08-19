@@ -24,6 +24,7 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
     mVec = []       # intensity vs diameter slopes
     bVec = []       # intensity vs diameter y-intercepts
     objVec = []     # objects identified
+    xyVec = []
     omit = []       # omission indices
     train0 = []     # binary masks for NN training/testing
     test0 = []      # deconvoluted FITC images
@@ -60,6 +61,8 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
         threshold = threshold_otsu(XG)    # Get Otsu threshold
         otsuMask = XG > threshold         # Apply Otsu threshold
         labels = measure.label(otsuMask)  # Acquire labels
+        plt.imshow(otsuMask,cmap='gray'), plt.title("XG-"+shortname+": Otsu mask")
+        plt.savefig(dname+fsep+"XG-"+shortname+"_OtsuMask.png",dpi=150)
         rprops = measure.regionprops(labels,intensity_image=XG)  # Acquire object properties 
         dVec = []   # Object diameters
         iVec = []   # Object mean intensities
@@ -97,10 +100,11 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
             oCount = oCount + 1    
             oIdx = [*set(oIdx)]; oIdx.sort(reverse=True)  # Remove duplicates and sort elements
         # Remove false positives from all lists
-        for i in oIdx:
-            del dVec[i]
-            del iVec[i]
-            del eVec[i]
+        for j in oIdx:
+            del dVec[j]
+            del iVec[j]
+            del eVec[j]
+            del coords[j]
         currAvg = round(np.mean(dVec),2)
         avgVec.append(currAvg)  # Avg. object size  
         szVec.append(dVec)      # Object sizes
@@ -108,10 +112,9 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
         numObj = len(dVec)      # Number of objects in image
         objVec.append(numObj)
         omit.append(oIdx)       # Current omission index
+        xyVec.append(coords)
         print("Number of objects: "+str(numObj))                                              
         print(shortname+" mean size: "+str(currAvg)+" nm")
-        plt.imshow(otsuMask,cmap='gray'), plt.title("XG-"+shortname+": Otsu mask")
-        plt.savefig(dname+fsep+"XG-"+shortname+"_OtsuMask.png",dpi=150)
         labelsColored = label2rgb(labels,colors=["green"],bg_label=0)  # Color objects
         labelsColored = exposure.adjust_gamma(labelsColored,gamma=0.1,gain=1)
         plt.imshow(labelsColored), plt.title("XG-"+shortname+": Labels")
@@ -143,16 +146,6 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
         plt.title("XG-"+str(count)+" Linear eccentricty vs. diameter")
         plt.savefig(dname+fsep+"XG-"+str(count)+"_EvsD.png",dpi=150)
         plt.close('all')
-        # Modify Masks 
-        print("Modifying binary mask for NN training...")
-        print("|.............................................|")
-        for k in oIdx:
-            currPts = coords[k]
-            for n in range(len(currPts)):
-                pt = currPts[n,0:]
-                otsuMask[pt[0],pt[1]] = 0
-        labels = measure.label(otsuMask)
-        test0.append(labels)
         count = count + 1
     
     # Generate PDF 
@@ -197,6 +190,7 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
     print("    1200 nm to 3000 nm: "+str(nSz5)+" objects")
     
     logCount0(XGsnames,objVec,avgVec,XG_mu,nF,outDir,fsep,nSz1,nSz2,nSz3,nSz4,nSz5)
+    exportTSV(XGsnames, szVec, xyVec, outDir, fsep)
     stop = time.time() - start;
     print("Step 4 end: "+str(round(stop,4))+" seconds"); print(" ")
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
@@ -224,3 +218,9 @@ def logCount0(XGsnames,objVec,avgVec,XG_mu,nF,outDir,fsep,nSz1,nSz2,nSz3,nSz4,nS
         countLog.write("     1200 nm to 3000 nm: "+str(nSz5)+" objects \n")
         countLog.write("|>===============================================<| \n")
         countLog.write("|.................................................| \n")
+# (filename, size, x coord, y coord)
+def exportTSV(XGsnames,szVec, xyVec, outDir,fsep):
+    with open(outDir+fsep+"Step-4_genMasks"+fsep+"sizeCoords.tsv",'w+') as countLog:
+        for i, name in enumerate(XGsnames):
+            for j in range(len(szVec[i])):
+                countLog.write(name+"\t"+str(szVec[i][j])+"\t"+str(xyVec[i][j][0][0])+"\t"+str(xyVec[i][j][0][1])+"\n")
