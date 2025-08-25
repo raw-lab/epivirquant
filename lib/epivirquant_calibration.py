@@ -103,7 +103,7 @@ def corr(corrCount, XB, shortname, PSF, nLR_iter, szMetric, px2nm, outDir):
     print("Processing ended for: " + shortname)
     return shortname, corrCount, currAvg, iVec, dVec, m, b, numObj, round(time.time()-startCorr, 4)
 
-def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr, sphereSize):
+def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr, sphereSize, cpus):
     avgVec = []    # Initialize list to populate with object size averages
     intVec = []    # Initialize list to populate with object intensities
     szVec = []     # Initialize list to populate with object sizes
@@ -119,7 +119,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
         os.mkdir(os.path.join(outDir, "Step-3_Corr"))   # Create Step 3 output directory
 
     from joblib import Parallel, delayed
-    results = Parallel(n_jobs=-3)(delayed(corr)(ii, XB0[ii], XBsnames[ii], PSF, nLR_iter, szMetric, px2nm, outDir) for ii in range(len(XB0)))
+    results = Parallel(n_jobs=cpus)(delayed(corr)(ii, XB0[ii], XBsnames[ii], PSF, nLR_iter, szMetric, px2nm, outDir) for ii in range(len(XB0)))
 
     for shortname, corrCount, currAvg, iVec, dVec, m, b, numObj, runtime in results:
         print("Evaluated image", corrCount+1, "/", nCorr, ":", shortname, "in", runtime, "seconds");

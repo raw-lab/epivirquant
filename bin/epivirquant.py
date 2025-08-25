@@ -32,7 +32,7 @@ def main():
     
     # Step 3: Get the Correction Coefficent and Quantify the DAPI images
     px2nm = args.scaleMetric / args.scaleLength 
-    CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize)
+    CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize, args.cpus)
     
     # Step 4: Quantify the FITC images
     epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
@@ -67,13 +67,14 @@ optional.add_argument('--tauVec', type=list, default=np.arange(1/(100*math.pi), 
 optional.add_argument('--vVec', type=list, default=np.arange(1/math.pi, 1.1*math.pi, 1/math.pi), help="Vector with v parameters [1/math.pi, 1.1*math.pi, 1/math.pi]")
 #>----------------------------------| Size Correction |----------------------------------<#
 optional.add_argument('--nLR_iter', type=int, default=80, help="Set number of iterations for Lucy-Richardson algorithm. [80]")
-optional.add_argument('--szMetric', type=int, default=1, help="""Set metric to determine identified object sizes. The available
+optional.add_argument('--szMetric', type=int, default=1, help=f"""Set metric to determine identified object sizes. The available
 options are:
    1) Equivalent diameter area: the diameter of a circle having
       the same area as the identified object area (default).
    2) The average of the identified objects' semi-major and
       semi-minor axes. [1]""")
 optional.add_argument('--SM_constraint', type=int, default=8000, help="Set threshold of semi-major axis to determine false positives. [8000]")
+optional.add_argument('--cpus', type=int, default=-2, help="Number of CPUs to use per task. Negative one will use all cores, negative 2 uses all but one. [-2]")
 optional.add_argument('--outDir', type=str, default="EpiVirQuant_Output", help="Set EpiVirQuant output directory name. [EpiVirQuant_Output]")
 optional.add_argument('--version', '-v', action='version',
                     version=f'Cyclops: \n version: {__version__} {__date__}',
