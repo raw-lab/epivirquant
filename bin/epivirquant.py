@@ -28,7 +28,7 @@ def main():
     optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.pad)
 
     # Step 2: Blind Deconvolution 
-    PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
+    PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
     
     # Step 3: Get the Correction Coefficent and Quantify the DAPI images
     px2nm = args.scaleMetric / args.scaleLength 
@@ -95,16 +95,16 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     nF = len(fnamesXG)
     print("Loading images from DAPI and FITC dirs...")
     XBfnames = [f"{fpath1}{fsep}{name}" for name in fnamesXB]
-    XBsnames = [name[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXB]
+    XBsnames = [name[:-len(fExtension)] for name in fnamesXB]
     XB0 = [img_as_float(io.imread(fname)) for fname in XBfnames]
     XGfnames = [f"{fpath2}{fsep}{name}" for name in fnamesXG]
-    XGsnames = [name[:-len(fExtension)].replace(" ", "").replace("blue beads ", "BB-").replace(" + ", "+") for name in fnamesXG]
+    XGsnames = [name[:-len(fExtension)] for name in fnamesXG]
     XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
     fpath3 = path_CALIB[0]
   
     currVP = io.imread(fpath3)
     XBVP = img_as_float(currVP)
-    snameVP = fpath3.split(fsep)[-1].replace(" ", "").replace("bluebeads ", "BB-")[:-len(fExtension)]
+    snameVP = fpath3.split(fsep)[-1][:-len(fExtension)]
     print(f"Number of DAPI images: {nCorr}")
     print(f"Number of FITC images: {nF}")
     print("Initialization complete.\n")
