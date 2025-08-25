@@ -1,27 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import os
-import datetime
 import shutil
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from scipy.spatial.distance import cdist
-from scipy import ndimage
-from scipy.ndimage import label
-from scipy.signal import find_peaks
-from skimage.filters import threshold_otsu
-from skimage import measure, io, restoration, img_as_float, exposure
-from skimage.color import label2rgb
-from skimage.feature import graycomatrix, graycoprops
-from skimage.measure import shannon_entropy
-from skimage import img_as_ubyte
-from scipy.spatial.distance import cdist
-from scipy.ndimage import gaussian_filter
-from pypher.pypher import psf2otf, zero_pad
-from stardist.models import StarDist2D
+from skimage import io, img_as_float
 import argparse
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
@@ -37,47 +20,37 @@ __authors__ = 'Richard Allen White III & Jose Luis Figueroa III'
 def main():
     args = parser.parse_args()
 
-    ct = datetime.datetime.now()
-    cTime = ct.strftime("%m-%d-%Y %H:%M:%S")
-    cTime2 = ct.strftime("%m-%d-%Y_%H-%M-%S")
-
     if os.path.exists(args.outDir):
+        print("Deleting old output folder: " + args.outDir)
         shutil.rmtree(args.outDir)
     os.mkdir(args.outDir)
-    fsep = os.sep
-    #eps = np.finfo(float).eps
-    #corrCell = []
 
-    #px2nm = args.scaleMetric / args.scaleLength
- 
-    #eps = np.finfo(float).eps  # Machine epsilon
-    #corrCell = []  # List for correction factors
-    #px2nm = scaleMetric / scaleLength  # Nanometers-per-pixel ratio
+    # Step 0: Load Images
     XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
+
+    # Step 1: Get Optimizaion Box
     optBox = getVP(args.outDir, snameVP, XBVP, args.pad)
-    
+
+    # Step 2: Blind Deconvolution 
     PSF = decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
+    
+    # Step 3: Get the Correction Coefficent and Quantify the DAPI images
     px2nm = args.scaleMetric / args.scaleLength 
-    #outDir, PSF, nLR_iter, szMetric, px2nm, corrPath, XB0, XBsnames, nCorr, sphereSize
     CORR = get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize)
     
-    generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint, args.train_split)
+    # Step 4: Quantify the FITC images
+    generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
 
-    #PSFi, x, y = create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
-    #PSFr, Xdec = run_simulation((PSFi, optBox, args.nMLE_iter, args.fSize, args.outDir, f"Cyclops{fsep}{cTime2}", fsep))
-    print(" ")
     print("EpiVirQuant complete.")
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
 required = parser.add_argument_group('Input file(s) required')
-required.add_argument('-c', '--config', help='Path to config file, command line takes priority')
-required.add_argument('-i', '--input', action='append', default=[], help='Path to input image or folder containing images')
 required.add_argument('--dapi', action='append', default=[], help='Path to DAPI images directory')
 required.add_argument('--fitc', action='append', default=[], help='Path to FITC images directory')
 required.add_argument('--calibration', action='append', default=[], help='Path to calibration DAPI image')
 
-optional = parser.add_argument_group('optional arguments')
+optional = parser.add_argument_group('Optional arguments, ')
 optional.add_argument('--genFigs', type=bool, default=True, help='Toggle the generation of figures on (True) or off (False). [True]')
 optional.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
 optional.add_argument('--scaleLength', type=float, default=585, help='Length of scale bar for imaging equipment in pixels (px). [585]')
@@ -105,10 +78,7 @@ options are:
    2) The average of the identified objects' semi-major and
       semi-minor axes. [1]""")
 optional.add_argument('--SM_constraint', type=int, default=8000, help="Set threshold of semi-major axis to determine false positives. [8000]")
-optional.add_argument('--train_split', type=float, default=0.8, help="""Set the desired training-testing split. The default is 0.8 which
-results in an 80% training data and 20% testing data split. This number is rounded if not divisible. [0.8]""")
 optional.add_argument('--outDir', type=str, default="EpiVirQuant_Output", help="Set EpiVirQuant output directory name. [EpiVirQuant_Output]")
-optional.add_argument('--cpus', type=int, help="Number of CPUs to use per task. System will try to detect available CPUs if not specified [Auto Detect]")
 optional.add_argument('--version', '-v', action='version',
                     version=f'Cyclops: \n version: {__version__} {__date__}',
                     help='show the version number and exit')
@@ -143,174 +113,6 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     print(f"Number of FITC images: {nF}")
     print("Initialization complete.\n")
     return XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF
-
-def plot_distribution(testBox, path, fname, fsep):
-    sz = np.shape(testBox)
-    lenTestBox = sz[1]
-    x = np.arange(lenTestBox)
-    VPdist = np.sum(testBox, axis=0)
-    pksIdx = find_peaks(VPdist)[0]
-    if len(pksIdx) == 2:
-        distMin = np.argmin(VPdist[pksIdx[0]:pksIdx[1]]) + pksIdx[0]
-    else:
-        distMin = np.floor(lenTestBox / 2)
-    B = round(VPdist[int(distMin)], 2)
-    plt.plot(x, VPdist, 'k-', linewidth=1.5)
-    plt.xlabel("Column"), plt.ylabel("Intensity column-wise sum  (arb. unit)")
-    plt.title("Virgilian pair distribution")
-    plt.fill_between(x, VPdist, alpha=0.85)
-    plt.axvline(x=distMin, color='white', linestyle=':', linewidth=4)
-    txt = f"B = {B}"
-    plt.text(distMin + 1, np.max(VPdist) / 6, txt, color='black', fontsize='x-large')
-    plt.savefig(f"{path}{fsep}{fname}")
-    plt.close('all')
-    return x, VPdist, B
-
-def create_PSF(fSize, a, b, sigma, r, tau, v, s, psfMethod):
-    x = np.linspace(-fSize, fSize, fSize)
-    y = np.linspace(-fSize, fSize, fSize)
-    x, y = np.meshgrid(x, y)
-    PSFi = np.zeros((fSize, fSize))
-    R = np.sqrt(np.square(x) + np.square(y))
-    if psfMethod == "gam":
-        for i in range(fSize):
-            for j in range(fSize):
-                #equation 6
-                PSFi[i, j] = a * np.exp(v / ((math.gamma(1 + tau * R[i, j])) * (math.gamma(1 - tau * R[i, j])))) + s
-    elif psfMethod == "gau":
-        PSFi = gaussian_filter(np.exp(-(np.square(x) + np.square(y)) / (2. * (sigma ** 2))), sigma)
-    elif psfMethod == "snc":
-        for i in range(fSize):
-            for j in range(fSize):
-                PSFi[i, j] = (np.divide(np.sin(tau * R[i, j]), tau * R[i, j]))
-    return PSFi, x, y
-
-def get_MLE(optBox, fSize, PSFi, nMLE_iter):
-    L, dim = optBox.shape
-    J = np.zeros((L, dim))
-    P = np.zeros((fSize * fSize, 2))
-    fw = np.fft.fft2(np.ones((L, dim)))
-    nMLE_iter = 10  # Set desired number of MLE iterations (default 10)
-    for k in range(nMLE_iter):
-        J_k, P_k = update_MLE(J, P, k)
-        OTF = psf2otf(P_k, (L, dim))
-        plusNoise = np.real(np.fft.ifft2(OTF * np.fft.fft2(J_k)))
-        plusNoise[plusNoise <= 0] = np.finfo(plusNoise.dtype).eps
-        currEst = J[0] / (plusNoise + np.finfo(plusNoise.dtype).eps)
-        Psi_k = np.fft.fft2(currEst)
-        J[2] = J[1]
-        OTF = psf2otf(P[1], (L, dim))
-        scale = np.real(np.fft.ifft2(np.conj(OTF) * fw)) + np.sqrt(np.finfo(scale.dtype).eps)
-        OTFtemp = np.fft.ifft2(np.conj(OTF) * Psi_k)
-        J[1] = np.maximum((J_k * np.real(OTFtemp) / scale), 0)
-        J_k_flat = np.ndarray.flatten(J_k, order='F')
-        J_flat = np.ndarray.flatten(J[1], order='F')
-        J4 = J[3]
-        Jtemp = J_flat - J_k_flat
-        J[3] = np.vstack((Jtemp, J4[:, 0])).T
-        P[2] = P[1]
-        Jfreq = np.fft.fft2(J[2])
-        OTF_k = np.conj(Jfreq) * fw
-        scale = otf2psf(OTF_k, fSize) + np.sqrt(np.finfo(scale.dtype).eps)
-        Jfreq_k = otf2psf(np.conj(Jfreq) * Psi_k, fSize)
-        P[1] = np.maximum((P_k * Jfreq_k) / scale, 0)
-        P[1] = P[1] / np.sum(P[1])
-        P_flat = np.ndarray.flatten(P[1], order='F')
-        P_k_flat = np.ndarray.flatten(P_k, order='F')
-        P4 = P[3]
-        Ptemp = P_flat - P_k_flat
-        P[3] = np.vstack((Ptemp, P4[:, 0])).T
-        if k == (nMLE_iter - 1):
-            PSFr = P[1]
-            Xdec = J[1]
-    return PSFr, Xdec
-
-def update_MLE(J, P, k):
-    if k != 0:
-        alpha_k_J = (J[3][:, 0].T @ J[3][:, 1]) / (J[3][:, 1].T @ J[3][:, 1] + np.finfo(alpha_k_J.dtype).eps)
-        alpha_k_J = np.maximum(np.minimum(alpha_k_J, 0), 0)
-        J_k = np.maximum(J[1] + alpha_k_J * (J[1] - J[2]), 0)
-        alpha_k_P = (P[3][:, 0].T @ P[3][:, 1]) / (P[3][:, 1].T @ P[3][:, 1] + np.finfo(alpha_k_P.dtype).eps)
-        alpha_k_P = np.maximum(np.minimum(alpha_k_P, 0), 0)
-        P_k = np.maximum(P[1] + alpha_k_P * (P[1] - P[2]), 0)
-        P_k = P_k / np.sum(P_k)
-    else:
-        J_k = np.maximum(J[1], 0)
-        P_k = np.maximum(P[1], 0)
-        P_k = P_k / (np.sum(P_k) + np.finfo(P_k.dtype).eps)
-    return J_k, P_k
-
-def otf2psf(OTF, fSize):
-    if np.sum(OTF) == 0:
-        PSF = np.zeros_like(OTF)
-    else:
-        PSF = np.fft.ifft2(OTF)
-        if np.max(abs(PSF.imag)) / np.max(abs(PSF)) <= np.finfo(PSF.dtype).eps:
-            PSF = PSF.real
-        PSF = np.roll(PSF, int(np.floor(fSize / 2)), axis=0)
-        PSF = np.roll(PSF, int(np.floor(fSize / 2)), axis=1)
-        PSF = PSF[0:fSize, 0:fSize]
-    return PSF
-
-def opt_metrics(Xdec, entVec, energyVec):
-    Xdec_uint = img_as_ubyte(Xdec)
-    S = shannon_entropy(Xdec_uint, base=2)
-    entVec.append(S)
-    GLCM = graycomatrix(Xdec_uint, [2], [0], symmetric=True, normed=True)
-    energy = graycoprops(GLCM, "energy")[0, 0]
-    energyVec.append(energy)
-    return entVec, energyVec
-
-def plot_metrics(entVec, energyVec, path, fname, fsep):
-    plt.figure()
-    plt.plot(entVec, 'b-', linewidth=2)
-    plt.xlabel("Iteration"), plt.ylabel("Shannon Entropy (bits)")
-    plt.title("Shannon Entropy convergence")
-    plt.savefig(f"{path}{fsep}{fname}_Entropy")
-    plt.close('all')
-
-    plt.figure()
-    plt.plot(energyVec, 'r-', linewidth=2)
-    plt.xlabel("Iteration"), plt.ylabel("GLCM Energy")
-    plt.title("GLCM Energy convergence")
-    plt.savefig(f"{path}{fsep}{fname}_Energy")
-    plt.close('all')
-
-def plot_3D(XB, XG, Z, path, fname, fsep):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(XB, XG, Z, cmap='viridis')
-    ax.set_xlabel('XB')
-    ax.set_ylabel('XG')
-    ax.set_zlabel('PSF')
-    ax.set_title('3D Plot of XB, XG, and PSF')
-    plt.savefig(f"{path}{fsep}{fname}_3D_Plot")
-    plt.close('all')
-
-def run_simulation(input_params):
-    PSFi, optBox, nMLE_iter, fSize, path, fname, fsep = input_params
-    PSFr, Xdec = get_MLE(optBox, fSize, PSFi, nMLE_iter)
-    entVec, energyVec = [], []
-    for i in range(nMLE_iter):
-        entVec, energyVec = opt_metrics(Xdec, entVec, energyVec)
-    plot_metrics(entVec, energyVec, path, fname, fsep)
-    XB, XG, Z = plot_3D_PSFi(PSFi, path, fname, fsep)
-    plot_3D(XB, XG, Z, path, fname, fsep)
-    return PSFr, Xdec
-
-def plot_3D_PSFi(PSFi, path, fname, fsep):
-    XB, XG = np.meshgrid(np.arange(0, PSFi.shape[0]), np.arange(0, PSFi.shape[1]))
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(XB, XG, PSFi, cmap='viridis')
-    ax.set_xlabel('XB')
-    ax.set_ylabel('XG')
-    ax.set_zlabel('PSFi')
-    ax.set_title('3D Plot of XB, XG, and PSFi')
-    plt.savefig(f"{path}{fsep}{fname}_3D_Plot_PSFi")
-    plt.close('all')
-    return XB, XG, PSFi
-
 
 if __name__ == "__main__":
     main()

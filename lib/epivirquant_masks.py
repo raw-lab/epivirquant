@@ -12,7 +12,7 @@ from pypher.pypher import zero_pad
 
 fsep = '/'
 
-def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CORR, SM_constraint, train_split):
+def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CORR, SM_constraint):
     print(" "); print('Step 4 begin:');
     start = time.time();
     if os.path.exists(outDir+fsep+"Step-4_genMasks") == False:
