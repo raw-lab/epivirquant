@@ -1,10 +1,5 @@
 #!/usr/bin/env/ python
 # -*- coding: utf-8 -*-
-
-__version__ = '0.1'
-__date__ = '04-07-2024'
-__authors__ = 'Richard Allen White III & Jose Luis Figueroa III'
-
 import os
 import numpy as np
 import time

@@ -6,16 +6,12 @@ import math
 import numpy as np
 from skimage import io, img_as_float
 import argparse
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
-from epivirquant_pairing import getVP
-from epivirquant_decon import decon
-from epivirquant_calibration import get_corrolation
-from epivirquant_masks import generate_masks
 
+from epivirquant_lib import (epivirquant_pairing, epivirquant_decon, 
+                             epivirquant_calibration, epivirquant_masks)
 __version__ = '0.1'
 __date__ = '04-07-2024'
-__authors__ = 'Richard Allen White III & Jose Luis Figueroa III'
+__authors__ = 'Richard Allen White III, Sadie M. Hollenack, Jose Luis Figueroa III'
 
 def main():
     args = parser.parse_args()
@@ -29,17 +25,17 @@ def main():
     XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
 
     # Step 1: Get Optimizaion Box
-    optBox = getVP(args.outDir, snameVP, XBVP, args.pad)
+    optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.pad)
 
     # Step 2: Blind Deconvolution 
-    PSF = decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
+    PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, "gam")
     
     # Step 3: Get the Correction Coefficent and Quantify the DAPI images
     px2nm = args.scaleMetric / args.scaleLength 
-    CORR = get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize)
+    CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize)
     
     # Step 4: Quantify the FITC images
-    generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
+    epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
 
     print("EpiVirQuant complete.")
 
@@ -50,7 +46,7 @@ required.add_argument('--dapi', action='append', default=[], help='Path to DAPI 
 required.add_argument('--fitc', action='append', default=[], help='Path to FITC images directory')
 required.add_argument('--calibration', action='append', default=[], help='Path to calibration DAPI image')
 
-optional = parser.add_argument_group('Optional arguments, ')
+optional = parser.add_argument_group('Optional arguments')
 optional.add_argument('--genFigs', type=bool, default=True, help='Toggle the generation of figures on (True) or off (False). [True]')
 optional.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
 optional.add_argument('--scaleLength', type=float, default=585, help='Length of scale bar for imaging equipment in pixels (px). [585]')
@@ -62,7 +58,7 @@ optional.add_argument('--psfMethod', type=str, default='gam', choices=['gam', 'h
 optional.add_argument('--nMLE_iter', type=int, default=10, help="Set maximum likelihood estimation (MLE) number of iterations. [10]")
 optional.add_argument('--a', type=int, default=1, help="Parameter to control amplitude for gaussian component of GL PSF. [1]")
 optional.add_argument('--b', type=int, default=1, help="Parameter to control amplitude for sinc component of hybrid PSF. [1]")
-optional.add_argument('--sig', type=int, default=1, help="Parameter to control std of gaussian component of hybrid PSF. [1]")
+optional.add_argument('--sig', type=float, default=1, help="Parameter to control std of gaussian component of hybrid PSF. [1]")
 optional.add_argument('--r', type=float, default=2.718281828, help="Parameter to control width for sinc component of hybrid PSF. [2.718281828]")
 optional.add_argument('--tau', type=float, default=0.5, help="Parameter to control periodicity for sinc component of GL PSF. [0.5]")
 optional.add_argument('--v', type=float, default=2.25, help="Parameter to control GL-PSFi (initial PSF) vertical stretch. [2.25]")

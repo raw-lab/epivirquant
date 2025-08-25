@@ -9,8 +9,9 @@ from skimage import measure
 from skimage import restoration
 from skimage import exposure
 from pypher.pypher import zero_pad
+import os
 
-fsep = '/'
+fsep = os.sep
 
 def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CORR, SM_constraint):
     print(" "); print('Step 4 begin:');

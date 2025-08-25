@@ -11,10 +11,6 @@ from scipy.spatial.distance import cdist
 from skimage import measure
 from skimage.filters import threshold_otsu
 
-__version__ = '0.1'
-__date__ = '04-07-2024'
-__authors__ = 'Richard Allen White III & Jose Luis Figueroa III'
-
 def getVP(outDir, snameVP, XBVP, pad):
     fsep = os.sep
     if not os.path.exists(outDir + fsep + "Step-1_VP"):

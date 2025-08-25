@@ -10,7 +10,7 @@ from scipy import stats
 from skimage.filters import threshold_otsu
 from skimage.color import label2rgb
 from skimage import measure, restoration, exposure
-from pypher.pypher import psf2otf, zero_pad
+from pypher.pypher import zero_pad
 
 def corr(corrCount, XB, shortname, PSF, nLR_iter, szMetric, px2nm, outDir):
     print("Starting processing for: " + shortname)
@@ -119,7 +119,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
         os.mkdir(os.path.join(outDir, "Step-3_Corr"))   # Create Step 3 output directory
 
     from joblib import Parallel, delayed
-    results = Parallel(n_jobs=-2)(delayed(corr)(ii, XB0[ii], XBsnames[ii], PSF, nLR_iter, szMetric, px2nm, outDir) for ii in range(len(XB0)))
+    results = Parallel(n_jobs=-3)(delayed(corr)(ii, XB0[ii], XBsnames[ii], PSF, nLR_iter, szMetric, px2nm, outDir) for ii in range(len(XB0)))
 
     for shortname, corrCount, currAvg, iVec, dVec, m, b, numObj, runtime in results:
         print("Evaluated image", corrCount+1, "/", nCorr, ":", shortname, "in", runtime, "seconds");
