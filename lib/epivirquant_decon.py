@@ -31,6 +31,12 @@ def create_PSF(fSize, a, b, sigma, r, tau, v, s, psfMethod):
         sumPSF = PSFi.sum()
         if sumPSF != 0:
             PSFi /= sumPSF
+    elif psfMethod == "gau":
+        PSFi = gaussian_filter(np.exp(-(np.square(x) + np.square(y)) / (2. * (sigma ** 2))), sigma)
+    elif psfMethod == "snc":
+        for i in range(fSize):
+            for j in range(fSize):
+                PSFi[i, j] = (np.divide(np.sin(tau * R[i, j]), tau * R[i, j]))
     return PSFi, x, y
 
 def get_MLE(optBox, fSize, PSFi, nMLE_iter):
