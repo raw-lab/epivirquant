@@ -13,25 +13,40 @@ from skimage.feature import graycomatrix, graycoprops
 eps = np.finfo(float).eps 
 
 def create_PSF(fSize, a, b, sigma, r, tau, v, s, psfMethod):
-    x = np.linspace(-fSize, fSize, fSize)
-    y = np.linspace(-fSize, fSize, fSize)
-    x, y = np.meshgrid(x, y)
+    x1 = np.linspace(-fSize, fSize, fSize)
+    y2 = np.linspace(-fSize, fSize, fSize)
+    [x, y] = np.meshgrid(x1, y2)
     PSFi = np.zeros((fSize, fSize))
     R = np.sqrt(np.square(x) + np.square(y))
     if psfMethod == "gam":
         for i in range(fSize):
             for j in range(fSize):
                 #equation 6
-                PSFi[i, j] = a * np.exp(v / ((math.gamma(1 + tau * R[i, j])) * (math.gamma(1 - tau * R[i, j])))) + s
+                PSFi[i, j] = a * np.exp(v / ((math.gamma(1 + tau * R[i, j])) *
+                                             (math.gamma(1 - tau * R[i, j])))) + s
         sumPSF = PSFi.sum()
         if sumPSF != 0:
             PSFi /= sumPSF
     elif psfMethod == "gau":
-        PSFi = gaussian_filter(np.exp(-(np.square(x) + np.square(y)) / (2. * (sigma ** 2))), sigma)
-    elif psfMethod == "snc":
+        filt = (fSize,fSize)
+        p,q = [(ss-1.)/2. for ss in filt]
+        y,x = np.ogrid[-q:q+1,-p:p+1]
+        PSFi = np.exp(-(x*x + y*y)/(2.*sigma*sigma))
+        PSFi[PSFi < eps*PSFi.max()] = 0
+        sumPSF = PSFi.sum()
+        if sumPSF != 0:
+            PSFi /= sumPSF
+    elif psfMethod == "hyb":
+        #PSFi = gaussian_filter(np.exp(-(np.square(x) + np.square(y)) / (2. * (sigma ** 2))), sigma)
         for i in range(fSize):
             for j in range(fSize):
-                PSFi[i, j] = (np.divide(np.sin(tau * R[i, j]), tau * R[i, j]))
+                PSFi[i,j] = 1/(fSize*fSize)
+        sumPSF = PSFi.sum()
+        if sumPSF != 0:
+            PSFi /= sumPSF
+    else:
+        print("Error: Invalid PSF method selected. Please choose 'gam', 'gau', or 'hyb'.")
+        exit(1)
     return PSFi, x, y
 
 def get_MLE(optBox, fSize, PSFi, nMLE_iter):
@@ -126,7 +141,7 @@ def getTextures(Xdec,currOutDir):
     plt.xlabel("Y (px)",fontsize=7), plt.ylabel("X (px)",fontsize=7)
     plt.tick_params(axis='both',labelsize=8)
     ax.set_zlabel("Intensity (arb. unit)",fontsize=7)
-    plt.title("Final Virgilian Pair intensity textures"), plt.show()
+    plt.title("Final Virgilian Pair intensity textures")
     plt.savefig(currOutDir+os.sep+"VP_final_textures.png",dpi=300)
     plt.close('all')             # Close all open figures
 
@@ -137,14 +152,14 @@ def genPSFOTF(PSF,currOutDir):
     f1 = plt.figure(); ax = f1.add_subplot(projection='3d')
     ax.plot_surface(x,y,PSF,rstride=1,cstride=1,cmap="coolwarm",linewidth=2)
     plt.ylabel("Y"); plt.xlabel("X"); ax.set_zlabel("h(x,y)")
-    plt.title("Final point-spread function"), plt.show()
+    plt.title("Final point-spread function")
     plt.savefig(currOutDir+os.sep+"PSF_final.png",dpi=150)
     plt.close('all')             # Close all open figures
     OTF = psf2otf(PSF,(L,dim))   # Convert PSF to OTF
     f2 = plt.figure(); ax = f2.add_subplot(projection='3d')
     ax.plot_surface(x,y,np.real(OTF),rstride=1,cstride=1,cmap="RdYlBu",linewidth=2)
     plt.ylabel("Y"); plt.xlabel("X"); ax.set_zlabel("Z")
-    plt.title("Final optical transfer function"), plt.show()
+    plt.title("Final optical transfer function")
     plt.savefig(currOutDir+os.sep+"OTF_final.png",dpi=150)                                  
     plt.close('all')             # Close all open figures
 

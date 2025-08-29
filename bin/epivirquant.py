@@ -27,8 +27,11 @@ def main():
     # Step 1: Get Optimizaion Box
     optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.pad)
 
-    # Step 2: Blind Deconvolution 
-    PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
+    # Step 2: Blind Deconvolution
+    if args.fSize <= 0:
+        PSF = epivirquant_decon.create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
+    else:
+        PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
     
     # Step 3: Get the Correction Coefficent and Quantify the DAPI images
     px2nm = args.scaleMetric / args.scaleLength 
@@ -38,6 +41,7 @@ def main():
     epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
 
     print("EpiVirQuant complete.")
+    return 0
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
@@ -53,8 +57,8 @@ optional.add_argument('--scaleLength', type=float, default=585, help='Length of 
 optional.add_argument('--scaleMetric', type=float, default=20e3, help="Represented length of scale bar in nm.")
 optional.add_argument('--pad', type=int, default=14, help="Set padding around VP centroids to expand bounding box. [14od]")
 optional.add_argument('--dConstraint', type=int, default=30, help="Set user-defined px distance constraint for VP candidates. [30]")
-optional.add_argument('--fSize', type=int, default=31, help="Set dimensions of hybrid point-spread function, fSize-by-fSize. [31]")
-optional.add_argument('--psfMethod', type=str, default='gam', choices=['gam', 'hyb', 'gau'], help="Set formula for point-spread function creation. The available options are: 'gam' (gamma sinc fn); 'hyb' (hybrid sinc fn); and 'gau' (gaussian). [gam]")
+optional.add_argument('--fSize', type=int, default=0, help="Set dimensions of hybrid point-spread function, fSize-by-fSize. [0]")
+optional.add_argument('--psfMethod', type=str, default='gam', choices=['gam', 'gau', 'hyb'], help="Set formula for point-spread function creation. The available options are: 'gam' (gamma sinc fn); 'hyb' (hybrid sinc fn); and 'gau' (gaussian). [gam]")
 optional.add_argument('--nMLE_iter', type=int, default=10, help="Set maximum likelihood estimation (MLE) number of iterations. [10]")
 optional.add_argument('--a', type=int, default=1, help="Parameter to control amplitude for gaussian component of GL PSF. [1]")
 optional.add_argument('--b', type=int, default=1, help="Parameter to control amplitude for sinc component of hybrid PSF. [1]")
@@ -112,4 +116,4 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     return XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF
 
 if __name__ == "__main__":
-    main()
+    exit(main())
