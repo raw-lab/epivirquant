@@ -28,7 +28,7 @@ def main():
     optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.pad)
 
     # Step 2: Blind Deconvolution
-    if args.fSize <= 0:
+    if args.fSize > 0:
         PSF = epivirquant_decon.create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
     else:
         PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
