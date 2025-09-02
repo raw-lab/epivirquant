@@ -205,7 +205,9 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     psf_vec = []
     #formula 7
     tau_vec = np.arange(0, 1/(10*math.pi), 1/(100*math.pi))
+    #tau_vec = np.arange(0,10/(100*math.pi),1/(100*math.pi)) #From Cyclops
     v_vec = np.arange(0, 1*math.pi, 1/10*math.pi)
+    #v_vec = np.arange(0, 1*math.pi, 1/10*math.pi) #From Cyclops
     opt_count = 1
     curr_out_dir = os.path.join(out_dir, "optimization")
 

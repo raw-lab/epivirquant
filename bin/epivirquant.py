@@ -10,10 +10,15 @@ import argparse
 from epivirquant_lib import (epivirquant_pairing, epivirquant_decon, 
                              epivirquant_calibration, epivirquant_masks)
 __version__ = '0.1'
-__date__ = '04-07-2024'
+__date__ = '08-30-2025'
 __authors__ = 'Richard Allen White III, Sadie M. Hollenack, Jose Luis Figueroa III'
 
 def main():
+    print(f"""
+    EpiVirQuant: Epifluorescence Viral Quantification Software
+    Version: {__version__}
+    Date: {__date__}
+    """)
     args = parser.parse_args()
 
     if os.path.exists(args.outDir):
@@ -28,8 +33,8 @@ def main():
     optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.pad)
 
     # Step 2: Blind Deconvolution
-    if args.fSize <= 0:
-        PSF = epivirquant_decon.create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
+    if args.fSize > 0:
+        [PSF,X,Y] = epivirquant_decon.create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
     else:
         PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
     
@@ -38,7 +43,8 @@ def main():
     CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize, args.cpus)
     
     # Step 4: Quantify the FITC images
-    epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
+    #TODO: commenting out mask generation for now
+    #epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
 
     print("EpiVirQuant complete.")
     return 0
@@ -67,8 +73,10 @@ optional.add_argument('--r', type=float, default=2.718281828, help="Parameter to
 optional.add_argument('--tau', type=float, default=0.5, help="Parameter to control periodicity for sinc component of GL PSF. [0.5]")
 optional.add_argument('--v', type=float, default=2.25, help="Parameter to control GL-PSFi (initial PSF) vertical stretch. [2.25]")
 optional.add_argument('--s', type=float, default=0.0, help="Parameter to control GL-PSFi (initial PSF) vertical shift. [0.0]")
-optional.add_argument('--tauVec', type=list, default=np.arange(1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)), help="Tau parameters [1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)]")
-optional.add_argument('--vVec', type=list, default=np.arange(1/math.pi, 1.1*math.pi, 1/math.pi), help="Vector with v parameters [1/math.pi, 1.1*math.pi, 1/math.pi]")
+#optional.add_argument('--tauVec', type=list, default=np.arange(1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)), help="Tau parameters [1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)]")
+optional.add_argument('--tauVec', type=list, default=np.arange(0,10/(100*math.pi),1/(100*math.pi)), help="tauVec from Cyclops")
+#optional.add_argument('--vVec', type=list, default=np.arange(1/math.pi, 1.1*math.pi, 1/math.pi), help="Vector with v parameters [1/math.pi, 1.1*math.pi, 1/math.pi]")
+optional.add_argument('--vVec', type=list, default=np.arange(0,1*math.pi,1/10*math.pi), help="vVec from Cyclops")
 #>----------------------------------| Size Correction |----------------------------------<#
 optional.add_argument('--nLR_iter', type=int, default=80, help="Set number of iterations for Lucy-Richardson algorithm. [80]")
 optional.add_argument('--szMetric', type=int, default=1, help=f"""Set metric to determine identified object sizes. The available
