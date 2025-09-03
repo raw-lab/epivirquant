@@ -1,4 +1,5 @@
 EpiVirQuant_Output
+out-panel*
 .vscode
 *__pycache__*
 build
