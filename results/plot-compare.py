@@ -6,6 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 def main():
 
@@ -50,6 +51,7 @@ def main():
 	plt.figure(figsize=(10, 6))
 	figPanel = dict()
 	figCount = dict()
+	fig5 = dict()
 	# Iterate through the data and plot each series
 	for tool in data:
 		with open(f"data-{tool}.tsv", "w") as f:
@@ -68,6 +70,7 @@ def main():
 							# save to tsv
 							for i in range(1, len(df["iteration"])):
 								print(panel, method, fsize, sig, df["iteration"][i], df["mu"][i], df["count"][i], sep="\t", file=f)
+
 							# Size plot
 							label = f"{tool}-{panel}-{method}-f{fsize}-s{sig}"
 							if panel not in figPanel:
@@ -80,14 +83,48 @@ def main():
 							if panel not in figCount:
 								figCount[panel] = go.Figure()
 							figCount[panel].add_trace(go.Scatter(x=df["iteration"], y=df["count"], name=label))
+
+							# Figure 5 plot
+							if tool not in fig5:
+								fig5[tool] = make_subplots(rows=3, cols=2, subplot_titles=("a", "b", "c", "d", "e", "f"))
+							if panel == "A":
+								row, col = 1, 1
+								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"]), row=row, col=col)
+								row, col = 1, 2
+								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"]), row=row, col=col)
+							elif panel == "B":
+								row, col = 2, 1
+								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"]), row=row, col=col)
+								row, col = 2, 2
+								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"]), row=row, col=col)
+							elif panel == "C":
+								row, col = 3, 1
+								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"]), row=row, col=col)
+								row, col = 3, 2
+								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"]), row=row, col=col)
+
 							# seaborn plot	
 
 	for p,f in figPanel.items():
 		f.update_layout(title=f'Panel {p}: Comparison of Sizes by Category', xaxis_title='Iteration', yaxis_title='Size (nm) average', legend_title='Category')
-		f.show()
+		f.write_html(f'comparison_size_panel{p}.html')
+		f.write_image(f'comparison_size_panel{p}.jpg', scale=2)
 	for p,f in figCount.items():
 		f.update_layout(title=f'Panel {p}: Comparison of Counts by Category', xaxis_title='Iteration', yaxis_title='Object Count', legend_title='Category')
-		f.show()
+		f.write_html(f'comparison_count_panel{p}.html')
+		f.write_image(f'comparison_count_panel{p}.jpg', scale=2)
+	for t,f in fig5.items():
+		f.update_layout(height=900, width=800, showlegend=False)
+		for i, annotation in enumerate(f['layout']['annotations']):
+			if i % 2 == 0:
+				annotation['x'] = 0.025
+			else:
+				annotation['x'] = 0.575
+		#f.layout.annotations[0].update(x=0.025)
+		#f.update_annotations(xanchor='left')
+		#f.update_layout_annotations(xanchor='left')
+		f.write_html(f'{t}/figure_5.html')
+		f.write_image(f'{t}/figure_5.jpg', scale=2)
 	# Set title and labels
 	plt.title('Comparison of Values by Category')
 	plt.xlabel('Iteration')
