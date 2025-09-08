@@ -71,37 +71,51 @@ def main():
 							for i in range(1, len(df["iteration"])):
 								print(panel, method, fsize, sig, df["iteration"][i], df["mu"][i], df["count"][i], sep="\t", file=f)
 
+							# Define line style based on parameters
+							#line_ = None
+							line_width = 1
+							if panel  == "A":
+								if sig == "0.50":
+									line_ = dict(color='blue', width=line_width, dash='solid')
+								if sig == "0.75":
+									line_ = dict(color='green', width=line_width, dash='dot')
+								if sig == "1.00":
+									line_ = dict(color='red', width=line_width, dash='dash')
+							if panel  == "B":
+								if fsize == "3":
+									line_ = dict(color='purple', width=line_width, dash='solid')
+								if fsize == "5":
+									line_ = dict(color='orange', width=line_width, dash='dash')
+								if fsize == "7":
+									line_ = dict(color='black', width=line_width, dash='dot')
+							if panel  == "C":
+								if method in ["tPSF", "gam"]:
+									line_ = dict(color='blue', width=line_width, dash='solid')
+								if method in ["cs2", "gau"]:
+									line_ = dict(color='red', width=line_width, dash='dash')
+								if method in ["cs3", "hyb"]:
+									line_ = dict(color='black', width=line_width, dash='dot')
+
+
 							# Size plot
 							label = f"{tool}-{panel}-{method}-f{fsize}-s{sig}"
 							if panel not in figPanel:
 								figPanel[panel] = go.Figure()
-							figPanel[panel].add_trace(go.Scatter(x=df["iteration"], y=df["mu"], name=label))
+							figPanel[panel].add_trace(go.Scatter(x=df["iteration"], y=df["mu"], name=label, line=line_))
 							#sns.lineplot(x='iteration', y='mu', data=df, label=label)
 
 							# Count plot
 							label = f"{tool}-{panel}-{method}-f{fsize}-s{sig}"
 							if panel not in figCount:
 								figCount[panel] = go.Figure()
-							figCount[panel].add_trace(go.Scatter(x=df["iteration"], y=df["count"], name=label))
+							figCount[panel].add_trace(go.Scatter(x=df["iteration"], y=df["count"], name=label, line=line_))
 
 							# Figure 5 plot
 							if tool not in fig5:
 								fig5[tool] = make_subplots(rows=3, cols=2, subplot_titles=("a", "b", "c", "d", "e", "f"))
-							if panel == "A":
-								row, col = 1, 1
-								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"]), row=row, col=col)
-								row, col = 1, 2
-								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"]), row=row, col=col)
-							elif panel == "B":
-								row, col = 2, 1
-								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"]), row=row, col=col)
-								row, col = 2, 2
-								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"]), row=row, col=col)
-							elif panel == "C":
-								row, col = 3, 1
-								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"]), row=row, col=col)
-								row, col = 3, 2
-								fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"]), row=row, col=col)
+							row_ = ["A", "B", "C"].index(panel) + 1
+							fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["mu"], line=line_), row=row_, col=1)
+							fig5[tool].add_trace(go.Scatter(x=df["iteration"], y=df["count"], line=line_), row=row_, col=2)
 
 							# seaborn plot	
 
@@ -114,7 +128,35 @@ def main():
 		f.write_html(f'comparison_count_panel{p}.html')
 		f.write_image(f'comparison_count_panel{p}.jpg', scale=2)
 	for t,f in fig5.items():
-		f.update_layout(height=900, width=800, showlegend=False)
+		f.update_layout(
+			template = "plotly_white",
+			height=900, width=800,
+			showlegend=False,
+			font=dict(size=20, color="Black"),
+			xaxis_range=[0,300],
+			)
+		f.update_xaxes(
+			gridcolor="rgba(00, 00, 00, 0.00)",
+			#tickangle=90
+			)
+		f.update_yaxes(
+			showline=True,
+			linewidth=2,
+			linecolor='black',
+			gridcolor="rgba(38,38,38,0.15)",
+			title=dict(text='Percentage of proteins')
+			)
+		f.update_xaxes(
+			zeroline=True,
+			zerolinewidth=2,
+			zerolinecolor='black'
+			)
+		f.update_yaxes(
+			zeroline=True,
+			zerolinewidth=2,
+			zerolinecolor='black'
+			)
+
 		for i, annotation in enumerate(f['layout']['annotations']):
 			if i % 2 == 0:
 				annotation['x'] = 0.025
@@ -124,7 +166,7 @@ def main():
 		#f.update_annotations(xanchor='left')
 		#f.update_layout_annotations(xanchor='left')
 		f.write_html(f'{t}/figure_5.html')
-		f.write_image(f'{t}/figure_5.jpg', scale=2)
+		f.write_image(f'{t}/figure_5.jpg', scale=2, height=1280, width=960)
 	# Set title and labels
 	plt.title('Comparison of Values by Category')
 	plt.xlabel('Iteration')
@@ -132,7 +174,7 @@ def main():
 
 	# Show the plot
 	plt.tight_layout()
-	plt.savefig("comparison_plot.png")
+	#plt.savefig("comparison_plot.png")
 	return 0
 
 if __name__ == "__main__":
