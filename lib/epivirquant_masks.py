@@ -191,7 +191,7 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
     print("    1200 nm to 3000 nm: "+str(nSz5)+" objects")
     
     logCount0(XGsnames,objVec,avgVec,XG_mu,nF,outDir,fsep,nSz1,nSz2,nSz3,nSz4,nSz5)
-    exportTSV(XGsnames, szVec, xyVec, outDir, fsep)
+    exportTSV(XGsnames, szVec, xyVec, intVec, outDir, fsep)
     stop = time.time() - start;
     print("Step 4 end: "+str(round(stop,4))+" seconds"); print(" ")
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o')
@@ -219,10 +219,10 @@ def logCount0(XGsnames,objVec,avgVec,XG_mu,nF,outDir,fsep,nSz1,nSz2,nSz3,nSz4,nS
         countLog.write("     1200 nm to 3000 nm: "+str(nSz5)+" objects \n")
         countLog.write("|>===============================================<| \n")
         countLog.write("|.................................................| \n")
-# (filename, size, x coord, y coord, )
-def exportTSV(XGsnames,szVec, xyVec, outDir,fsep):
+# (filename, size, x coord, y coord, intensity)
+def exportTSV(XGsnames,szVec, xyVec, intvec, outDir,fsep):
     with open(outDir+fsep+"Step-4_genMasks"+fsep+"sizeCoords.tsv",'w+') as countLog:
-        countLog.write("fileName\tsize\txcoord\tycoord")
+        countLog.write("fileName\tsize\txcoord\tycoord\tintensity(arb)")
         for i, name in enumerate(XGsnames):
             for j in range(len(szVec[i])):
-                countLog.write(name+"\t"+str(szVec[i][j])+"\t"+str(xyVec[i][j][0][0])+"\t"+str(xyVec[i][j][0][1])+"\n")
+                countLog.write(name+"\t"+str(szVec[i][j])+"\t"+str(xyVec[i][j][0][0])+"\t"+str(xyVec[i][j][0][1])+"\t"+intvec[i][j]+"\n")
