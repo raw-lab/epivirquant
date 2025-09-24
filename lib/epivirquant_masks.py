@@ -59,7 +59,7 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
         plt.close('all')
 
         print("Scanning FITC image: "+shortname)
-        threshold = threshold_otsu(XG)    # Get Otsu threshold
+        threshold = threshold_otsu(XG) + 0.01    # Get Otsu threshold
         otsuMask = XG > threshold         # Apply Otsu threshold
         labels = measure.label(otsuMask)  # Acquire labels
         plt.imshow(otsuMask,cmap='gray'), plt.title("XG-"+shortname+": Otsu mask")
@@ -219,9 +219,10 @@ def logCount0(XGsnames,objVec,avgVec,XG_mu,nF,outDir,fsep,nSz1,nSz2,nSz3,nSz4,nS
         countLog.write("     1200 nm to 3000 nm: "+str(nSz5)+" objects \n")
         countLog.write("|>===============================================<| \n")
         countLog.write("|.................................................| \n")
-# (filename, size, x coord, y coord)
+# (filename, size, x coord, y coord, )
 def exportTSV(XGsnames,szVec, xyVec, outDir,fsep):
     with open(outDir+fsep+"Step-4_genMasks"+fsep+"sizeCoords.tsv",'w+') as countLog:
+        countLog.write("fileName\tsize\txcoord\tycoord")
         for i, name in enumerate(XGsnames):
             for j in range(len(szVec[i])):
                 countLog.write(name+"\t"+str(szVec[i][j])+"\t"+str(xyVec[i][j][0][0])+"\t"+str(xyVec[i][j][0][1])+"\n")

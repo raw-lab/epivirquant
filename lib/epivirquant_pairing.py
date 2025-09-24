@@ -99,10 +99,10 @@ def getVP(outDir, snameVP, XBVP, pad):
     x1, x2, y1, y2 = VPcent[0]
     m = (y2 - y1) / (x2 - x1)
     optBox = VP0
-    plt.figure("VP_Final: rotated")
+    plt.figure("Initial Optimization Box")
     plt.imshow(optBox, cmap='gray')
-    plt.plot([x2, y2], [x1, y1],color="blue",marker="o",markerfacecolor="r")
-    plt.title("VP_Final: rotated")
+    #plt.plot([x2, y2], [x1, y1],color="blue",marker="o",markerfacecolor="r")
+    plt.title("VP_Final")
     plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP}_VP_Final.png", dpi=150)
     plt.close('all')
     
