@@ -142,6 +142,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
     plt.axvline(std1,color='r',linestyle =":",lw=2)
     plt.axvline(std2,color='r',linestyle =":",lw=2)
     plt.grid()
+    plt.xlim(0, 500)
     ymin = min(y); ymax = max(y)
     plt.fill_betweenx((ymin,ymax),std1,std2,color='gray',alpha=0.4)
     plt.xlabel("Object diameter (nm)"), plt.ylabel("P(d)")
@@ -157,6 +158,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
     for i in range(len(patches)):
         patches[i].set_facecolor(plt.cm.viridis(n[i]/max(n))) 
     plt.grid(axis='y',zorder=0)
+    plt.xlim(0, 500)
     plt.xlabel("Object diameter (nm)"), plt.ylabel("Frequency")
     plt.title("XB-all: object size histogram")
     plt.savefig(os.path.join(outDir, "Step-3_Corr", "XB_SizeHistogram.png"), dpi=150)
@@ -173,7 +175,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
     return CORR
 
 
-def logCorr(XBsnames, objVec, avgVec, CORR, XB_mu, nCorr, outDir):
+def logCorr(XBsnames, objVec, avgVec, CORR, XB_mu, nCorr, sigma, outDir):
     with open(os.path.join(outDir, "Step-3_Corr", "corrLog.txt"), 'w+') as corrLog:
         corrLog.write("|>==============================================<| \n")
         corrLog.write("|>================== CORR Log ==================<| \n")
@@ -185,8 +187,10 @@ def logCorr(XBsnames, objVec, avgVec, CORR, XB_mu, nCorr, outDir):
             corrLog.write("|>==============================================<| \n")
         corrLog.write(" Mean size over "+str(len(XBsnames))+" images:      "+
                       str(round(XB_mu,2))+" nm \n")
+        corrLog.write(" Measurment error: " + str(sigma) + " \n")
         corrLog.write(" Objects identified per image: "
                       +str(round(np.sum(objVec)/nCorr,2))+" obj/img \n")
+        corrLog.write(" Total number of objects: " + str(np.sum(objVec)) + " \n")
         corrLog.write(" Final correction factor:      "+str(round(CORR,6))+" \n")
         corrLog.write("|>==============================================<| \n")
         corrLog.write("|................................................| \n")
