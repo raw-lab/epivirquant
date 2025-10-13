@@ -168,7 +168,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
     XB_mu = np.mean(avgVec)    # Get mean size of all objects over all DAPI images
     CORR = sphereSize/XB_mu    # Compute fluorescence size correction coefficient
     print("XB correction factor: "+str(round(CORR,4)))
-    logCorr(XBsnames,objVec,avgVec,CORR,XB_mu,nCorr,outDir)     # Log correction info
+    logCorr(XBsnames,objVec,avgVec,CORR,XB_mu,nCorr, sigma, outDir)     # Log correction info
     stop = time.time() - start;     # Get correction run time
     print("Step 3 end: "+str(round(stop,4))+" seconds"); print(" ")
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o');
