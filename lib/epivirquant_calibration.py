@@ -159,6 +159,7 @@ def get_corrolation(outDir, PSF, nLR_iter, szMetric, px2nm, XB0, XBsnames, nCorr
         patches[i].set_facecolor(plt.cm.viridis(n[i]/max(n))) 
     plt.grid(axis='y',zorder=0)
     plt.xlim(0, 500)
+    plt.axvline(XB_mu, color='0',linestyle ="--", label=r'$\mu_{obj}$' + f" = {XB_mu:.2f}", zorder=5)
     plt.xlabel("Object diameter (nm)"), plt.ylabel("Frequency")
     plt.title("XB-all: object size histogram")
     plt.savefig(os.path.join(outDir, "Step-3_Corr", "XB_SizeHistogram.png"), dpi=150)

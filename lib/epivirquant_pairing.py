@@ -63,7 +63,7 @@ def getVP(outDir, snameVP, XBVP, pad):
     
     print(f"Number of VP candidates identified: {numVPs}")
     if numVPs == 0:
-        sys.exit(f"Cyclops ERROR: zero VPs identified within {dConstraint * 34.2} nm. Increase distance constraint or select new calibration image.")
+        sys.exit(f"Epivirquant ERROR: zero VPs identified within {dConstraint * 34.2} nm. Increase distance constraint or select new calibration image.")
     else:
         print(f"VPs saved to: {outDir}{fsep}Step-1_VP{fsep}")
     
