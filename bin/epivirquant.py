@@ -43,8 +43,7 @@ def main():
     CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize, args.cpus)
     
     # Step 4: Quantify the FITC images
-    #TODO: commenting out mask generation for now
-    #epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
+    epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
 
     print("EpiVirQuant complete.")
     return 0
@@ -74,9 +73,9 @@ optional.add_argument('--tau', type=float, default=0.5, help="Parameter to contr
 optional.add_argument('--v', type=float, default=2.25, help="Parameter to control GL-PSFi (initial PSF) vertical stretch. [2.25]")
 optional.add_argument('--s', type=float, default=0.0, help="Parameter to control GL-PSFi (initial PSF) vertical shift. [0.0]")
 #optional.add_argument('--tauVec', type=list, default=np.arange(1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)), help="Tau parameters [1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)]")
-optional.add_argument('--tauVec', type=list, default=np.arange(0,10/(100*math.pi),1/(100*math.pi)), help="tauVec from Cyclops")
+optional.add_argument('--tauVec', type=list, default=np.arange(0,10/(100*math.pi),1/(100*math.pi)), help="tauVec from equation 7")
 #optional.add_argument('--vVec', type=list, default=np.arange(1/math.pi, 1.1*math.pi, 1/math.pi), help="Vector with v parameters [1/math.pi, 1.1*math.pi, 1/math.pi]")
-optional.add_argument('--vVec', type=list, default=np.arange(0,1*math.pi,1/10*math.pi), help="vVec from Cyclops")
+optional.add_argument('--vVec', type=list, default=np.arange(0,1*math.pi,1/10*math.pi), help="vVec from equation 7")
 #>----------------------------------| Size Correction |----------------------------------<#
 optional.add_argument('--nLR_iter', type=int, default=80, help="Set number of iterations for Lucy-Richardson algorithm. [80]")
 optional.add_argument('--szMetric', type=int, default=1, help=f"""Set metric to determine identified object sizes. The available
@@ -89,7 +88,7 @@ optional.add_argument('--SM_constraint', type=int, default=8000, help="Set thres
 optional.add_argument('--cpus', type=int, default=-2, help="Number of CPUs to use per task. Negative one will use all cores, negative 2 uses all but one. [-2]")
 optional.add_argument('--outDir', type=str, default="EpiVirQuant_Output", help="Set EpiVirQuant output directory name. [EpiVirQuant_Output]")
 optional.add_argument('--version', '-v', action='version',
-                    version=f'Cyclops: \n version: {__version__} {__date__}',
+                    version=f'EpiVirQuant: \n version: {__version__} {__date__}',
                     help='show the version number and exit')
 optional.add_argument("-h", "--help", action="help", help="show this help message and exit")
 
