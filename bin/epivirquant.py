@@ -30,7 +30,8 @@ def main():
     XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
 
     # Step 1: Get Optimizaion Box
-    optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.pad)
+    px2nm = args.scaleMetric / args.scaleLength 
+    optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.dConstraint, args.pad, px2nm)
 
     # Step 2: Blind Deconvolution
     if args.fSize > 0:
@@ -39,7 +40,6 @@ def main():
         PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
     
     # Step 3: Get the Correction Coefficent and Quantify the DAPI images
-    px2nm = args.scaleMetric / args.scaleLength 
     CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize, args.cpus)
     
     # Step 4: Quantify the FITC images
@@ -50,16 +50,18 @@ def main():
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
-required = parser.add_argument_group('Input file(s) required')
-required.add_argument('--dapi', action='append', default=[], help='Path to DAPI images directory')
-required.add_argument('--fitc', action='append', default=[], help='Path to FITC images directory')
-required.add_argument('--calibration', action='append', default=[], help='Path to calibration DAPI image')
+images = parser.add_argument_group('Input file(s) required')
+images.add_argument('--fitc', action='append', required=True, help='Path to FITC images directory')
+
+sizing = parser.add_argument_group('Optional DAPI images for sizing')
+sizing.add_argument('--dapi', action='append', default=[], help='Path to DAPI images directory')
+sizing.add_argument('--calibration', action='append', default=[], help='Path to calibration DAPI image')
+sizing.add_argument('--scaleLength', type=float, default=585, help='Length of scale bar for imaging equipment in pixels (px). [585]')
+sizing.add_argument('--scaleMetric', type=float, default=20e3, help="Represented length of scale bar in nm.")
+sizing.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
 
 optional = parser.add_argument_group('Optional arguments')
 optional.add_argument('--genFigs', type=bool, default=True, help='Toggle the generation of figures on (True) or off (False). [True]')
-optional.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
-optional.add_argument('--scaleLength', type=float, default=585, help='Length of scale bar for imaging equipment in pixels (px). [585]')
-optional.add_argument('--scaleMetric', type=float, default=20e3, help="Represented length of scale bar in nm.")
 optional.add_argument('--pad', type=int, default=14, help="Set padding around VP centroids to expand bounding box. [14od]")
 optional.add_argument('--dConstraint', type=int, default=30, help="Set user-defined px distance constraint for VP candidates. [30]")
 optional.add_argument('--fSize', type=int, default=0, help="Set dimensions of hybrid point-spread function, fSize-by-fSize. [0]")
@@ -72,9 +74,7 @@ optional.add_argument('--r', type=float, default=2.718281828, help="Parameter to
 optional.add_argument('--tau', type=float, default=0.5, help="Parameter to control periodicity for sinc component of GL PSF. [0.5]")
 optional.add_argument('--v', type=float, default=2.25, help="Parameter to control GL-PSFi (initial PSF) vertical stretch. [2.25]")
 optional.add_argument('--s', type=float, default=0.0, help="Parameter to control GL-PSFi (initial PSF) vertical shift. [0.0]")
-#optional.add_argument('--tauVec', type=list, default=np.arange(1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)), help="Tau parameters [1/(100*math.pi), 11/(100*math.pi), 1/(100*math.pi)]")
 optional.add_argument('--tauVec', type=list, default=np.arange(0,10/(100*math.pi),1/(100*math.pi)), help="tauVec from equation 7")
-#optional.add_argument('--vVec', type=list, default=np.arange(1/math.pi, 1.1*math.pi, 1/math.pi), help="Vector with v parameters [1/math.pi, 1.1*math.pi, 1/math.pi]")
 optional.add_argument('--vVec', type=list, default=np.arange(0,1*math.pi,1/10*math.pi), help="vVec from equation 7")
 #>----------------------------------| Size Correction |----------------------------------<#
 optional.add_argument('--nLR_iter', type=int, default=80, help="Set number of iterations for Lucy-Richardson algorithm. [80]")
@@ -100,7 +100,6 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
 
     fnamesXB = os.listdir(fpath1)
     fnamesXG = os.listdir(fpath2)
-
     fExtension = os.path.splitext(fnamesXB[0])[-1]
 
     nCorr = len(fnamesXB)
@@ -108,13 +107,12 @@ def load_images(path_DAPI, path_FITC, path_CALIB):
     print("Loading images from DAPI and FITC dirs...")
     XBfnames = [f"{fpath1}{fsep}{name}" for name in fnamesXB]
     XBsnames = [name[:-len(fExtension)] for name in fnamesXB]
-    XB0 = [img_as_float(io.imread(fname)) for fname in XBfnames]
+    XB0 = [img_as_float(io.imread(fname, as_gray=True)) for fname in XBfnames]
     XGfnames = [f"{fpath2}{fsep}{name}" for name in fnamesXG]
     XGsnames = [name[:-len(fExtension)] for name in fnamesXG]
-    XG0 = [img_as_float(io.imread(fname)) for fname in XGfnames]
+    XG0 = [img_as_float(io.imread(fname, as_gray=True)) for fname in XGfnames]
     fpath3 = path_CALIB[0]
-  
-    currVP = io.imread(fpath3)
+    currVP = io.imread(fpath3, as_gray=True)
     XBVP = img_as_float(currVP)
     snameVP = fpath3.split(fsep)[-1][:-len(fExtension)]
     print(f"Number of DAPI images: {nCorr}")

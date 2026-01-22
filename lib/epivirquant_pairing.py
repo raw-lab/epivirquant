@@ -11,7 +11,7 @@ from scipy.spatial.distance import cdist
 from skimage import measure
 from skimage.filters import threshold_otsu
 
-def getVP(outDir, snameVP, XBVP, pad):
+def getVP(outDir, snameVP, XBVP, dConstraint, pad, px2nm):
     fsep = os.sep
     if not os.path.exists(outDir + fsep + "Step-1_VP"):
         os.mkdir(outDir + fsep + "Step-1_VP")
@@ -41,64 +41,47 @@ def getVP(outDir, snameVP, XBVP, pad):
     
     labels = measure.label(otsuMask_eroded)
     rprops = measure.regionprops(labels, intensity_image=XBVP)
-    
-    cVec = [prop.centroid for prop in rprops]
-    bBox = [prop.bbox for prop in rprops]
-    
-    cVec = np.array(cVec)
-    dConstraint = 30
-    dIdx = []
-    proxVec = []
-    
-    for i, currCenter in enumerate(cVec):
-        print([currCenter])
-        dVec = np.transpose(cdist([currCenter], cVec))
-        for j, dist in enumerate(dVec):
-            if 0 < dist <= dConstraint:
-                dIdx.append(j)
-                proxVec.append(float(dist))
-    proxVec = proxVec[1::2] #attempts to de duplicate distances
-    dIdx = np.array(dIdx)
-    numVPs = len(dIdx) // 2
-    
+
+    # calculates the centers and bounding box of each vlp
+    bBox = np.array([prop.bbox for prop in rprops])
+    cVec = np.array([prop.centroid for prop in rprops])
+    # Creates a matrix of the distances between every point
+    dVec = np.array(cdist(cVec, cVec))
+    # List to ensure we don't go over the same pair of points twice
+    vpsVisited: tuple[int, int] = []
+    optBox = []
+    minDist = 999999999999
+    numVPs = 0
+    # Find potential VP candidates
+    for i, currPoint in enumerate(dVec):
+        for j, dist in enumerate(currPoint):
+            if 0 < dist < dConstraint and (i,j) not in vpsVisited and (j,i) not in vpsVisited:
+                vpsVisited.append((i,j))
+                # get the bounding box of both, then crop the image to fit both points
+                point1 = bBox[i]; point2 = bBox[j]
+                yMin = min(point1[0], point2[0]) - pad
+                yMax = max(point1[2], point2[2]) + pad
+                xMin = min(point1[1], point2[1]) - pad
+                xMax = max(point1[3], point2[3]) + pad
+                VP = XBVP[yMin:yMax, xMin:xMax]
+                # Double check the potential VP actually has 2 objects
+                threshold = threshold_otsu(VP)
+                otsuMask = VP > threshold
+                otsuMask_eroded = ndimage.binary_erosion(otsuMask, iterations=1)
+                labels = measure.label(otsuMask_eroded)
+                rprops = measure.regionprops(labels, intensity_image=VP)
+                # the opt box will be the pair that is the closest together
+                if len(rprops) == 2 and dist < minDist:
+                    optBox = VP
+                    minDist = dist
+                    numVPs += 1
+   
     print(f"Number of VP candidates identified: {numVPs}")
     if numVPs == 0:
-        sys.exit(f"Epivirquant ERROR: zero VPs identified within {dConstraint * 34.2} nm. Increase distance constraint or select new calibration image.")
+        sys.exit(f"Epivirquant ERROR: zero VPs identified within {dConstraint * px2nm} nm. Increase distance constraint or select new calibration image.")
     else:
-        print(f"VPs saved to: {outDir}{fsep}Step-1_VP{fsep}")
-    
-    bBox = np.array(bBox)
-    VPidx = np.arange(0, len(dIdx), 2)
-    VPcoords = [np.concatenate([(bBox[dIdx[k], 0:], bBox[dIdx[k+1], 0:])]) for k in VPidx]
-    
-    VPs = []
-    cVec = []
-    for i, VPtemp in enumerate(VPcoords):
-        xVPmax = int(np.max(VPtemp[:, 3])) + pad
-        xVPmin = int(np.min(VPtemp[:, 1])) - pad
-        yVPmax = int(np.max(VPtemp[:, 2])) + pad
-        yVPmin = int(np.min(VPtemp[:, 0])) - pad
-        VP = XBVP[yVPmin:yVPmax, xVPmin:xVPmax]
-        threshold = threshold_otsu(VP)
-        otsuMask = VP > threshold
-        otsuMask_eroded = ndimage.binary_erosion(otsuMask, iterations=1)
-        labels = measure.label(otsuMask_eroded)
-        rprops = measure.regionprops(labels, intensity_image=VP)
-        if len(rprops) == 2:
-            for prop in rprops:
-                cVec.append(prop.centroid)
-                VPs.append(VP)
-        else:
-            del proxVec[i]
+        print(f"VP saved to: {outDir}{fsep}Step-1_VP{fsep}")
 
-    dMin = np.argmin(proxVec)
-    VPDict = {array.tobytes(): array for array in VPs}
-    VPs = list(VPDict.values())
-    VP0 = VPs[dMin]
-    VPcent = [np.concatenate((cVec[n], cVec[n+1])) for n in range(0, len(cVec)-1, 2)]
-    x1, x2, y1, y2 = VPcent[0]
-    m = (y2 - y1) / (x2 - x1)
-    optBox = VP0
     plt.figure("Initial Optimization Box")
     plt.imshow(optBox, cmap='gray')
     #plt.plot([x2, y2], [x1, y1],color="blue",marker="o",markerfacecolor="r")
@@ -106,8 +89,7 @@ def getVP(outDir, snameVP, XBVP, pad):
     plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP}_VP_Final.png", dpi=150)
     plt.close('all')
     
-    print(f"Closest proximity at VP {dMin+1}: {round(proxVec[dMin] * 34.2, 2)} nm")
-    print(f"VP candidate {dMin+1} selected.")
+    print(f"Closest proximity at VP: {round(minDist * px2nm, 2)} nm")
     
     stop = time.time() - start
     print(f"\nStep 1 end: {round(stop, 4)} seconds")
