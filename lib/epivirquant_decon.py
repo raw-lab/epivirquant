@@ -187,7 +187,7 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
         os.makedirs(out_dir)
     print("\nStep 2 begin:")
     print("Loading gamma sinc PSF...")
-
+    ## the opt box is just the biggest possible filter size
     start_time = time.time()
     L, dim = optBox.shape
     f_max = min(L, dim)

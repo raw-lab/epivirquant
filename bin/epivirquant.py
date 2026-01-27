@@ -10,7 +10,7 @@ import argparse
 from epivirquant_lib import (epivirquant_pairing, epivirquant_decon, 
                              epivirquant_calibration, epivirquant_masks)
 __version__ = '0.1'
-__date__ = '08-30-2025'
+__date__ = '01-27-2026'
 __authors__ = 'Richard Allen White III, Sadie M. Hollenack, Jose Luis Figueroa III'
 
 def main():
@@ -52,12 +52,12 @@ parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
 images = parser.add_argument_group('Input file(s) required')
 images.add_argument('--fitc', action='append', required=True, help='Path to FITC images directory')
+images.add_argument('--dapi', action='append', required=True, help='Path to DAPI images directory')
+images.add_argument('--calibration', action='append', required=True, help='Path to calibration image. Choose an image that has 2 objects close together, preferably DAPI')
 
-sizing = parser.add_argument_group('Optional DAPI images for sizing')
-sizing.add_argument('--dapi', action='append', default=[], help='Path to DAPI images directory')
-sizing.add_argument('--calibration', action='append', default=[], help='Path to calibration DAPI image')
+sizing = parser.add_argument_group('Sizing parameters')
 sizing.add_argument('--scaleLength', type=float, default=585, help='Length of scale bar for imaging equipment in pixels (px). [585]')
-sizing.add_argument('--scaleMetric', type=float, default=20e3, help="Represented length of scale bar in nm.")
+sizing.add_argument('--scaleMetric', type=float, default=20e3, help="Represented length of scale bar in nm. [20e3]")
 sizing.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
 
 optional = parser.add_argument_group('Optional arguments')

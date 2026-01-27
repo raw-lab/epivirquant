@@ -1,4 +1,4 @@
-Copyright 2024 Jose Luis Figueroa III, Bryan Fulghum, Madeline Bellanger, Pieter T Visscher, Richard Allen White III
+Copyright 2024 Jose Luis Figueroa III, Sadie Marie Hollenack, Bryan Fulghum, Madeline Bellanger, Pieter T Visscher, Richard Allen White III
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
