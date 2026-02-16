@@ -63,6 +63,9 @@ def getVP(outDir, snameVP, XBVP, dConstraint, pad, px2nm):
                 yMax = max(point1[2], point2[2]) + pad
                 xMin = min(point1[1], point2[1]) - pad
                 xMax = max(point1[3], point2[3]) + pad
+                # if any of the points are off the image due to padding, skip it
+                if yMin < 0 or yMax < 0 or xMin < 0 or xMax < 0:
+                    continue
                 VP = XBVP[yMin:yMax, xMin:xMax]
                 # Double check the potential VP actually has 2 objects
                 threshold = threshold_otsu(VP)

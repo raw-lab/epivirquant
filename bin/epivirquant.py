@@ -7,10 +7,10 @@ import numpy as np
 from skimage import io, img_as_float
 import argparse
 
-from epivirquant_lib import (epivirquant_pairing, epivirquant_decon, 
+from epilib import (epivirquant_pairing, epivirquant_decon, 
                              epivirquant_calibration, epivirquant_masks)
 __version__ = '0.1'
-__date__ = '01-27-2026'
+__date__ = '02-16-2026'
 __authors__ = 'Richard Allen White III, Sadie M. Hollenack, Jose Luis Figueroa III'
 
 def main():
@@ -61,7 +61,7 @@ sizing.add_argument('--scaleMetric', type=float, default=20e3, help="Represented
 sizing.add_argument('--sphereSize', type=float, default=175, help="Diameter of microspheres in nanometers.")
 
 optional = parser.add_argument_group('Optional arguments')
-optional.add_argument('--genFigs', type=bool, default=True, help='Toggle the generation of figures on (True) or off (False). [True]')
+optional.add_argument('--genFigs', type=bool, default=False, help='Toggle the generation of figures on (True) or off (False). [False]')
 optional.add_argument('--pad', type=int, default=14, help="Set padding around VP centroids to expand bounding box. [14od]")
 optional.add_argument('--dConstraint', type=int, default=30, help="Set user-defined px distance constraint for VP candidates. [30]")
 optional.add_argument('--fSize', type=int, default=0, help="Set dimensions of hybrid point-spread function, fSize-by-fSize. [0]")

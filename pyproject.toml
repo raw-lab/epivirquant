@@ -7,7 +7,7 @@ name = "EpivirQuant"
 description="EpiVirQuant directly counts and measures the size of viral-like particles, bacteria, archaea in epifluorescence microscopy images commonly used in viral ecology, viral estimation and enumeration, and microbial ecology."
 authors = [
     {name = "Jose L. Figueroa III", email = "jlfiguer@charlotte.edu"},
-    {name = "Sadie M. Hollenack", email = "bohllena@charlotte.edu"},
+    {name = "Sadie M. Hollenack", email = "bhollena@charlotte.edu"},
     {name = "Richard A. White III", email = "rwhit101@charlotte.edu"},
 ]
 requires-python = ">=3.8"
@@ -28,9 +28,12 @@ dynamic = ["version"]
 Repository = "https://github.com/raw-lab/epivirquant"
 
 [project.scripts]
-epivirquant = "bin.epivirquant:main"    
+epivirquant = "epibin.epivirquant:main"    
     
 
 [tool.setuptools]
-packages = ["bin", "lib"]
-package-dir = {"bin" = "bin", "lib" = "lib"} 
+packages = ["epibin", "epilib"]
+
+[tool.setuptools.package-dir]
+epibin = "bin"
+epilib = "lib"
