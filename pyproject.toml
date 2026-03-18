@@ -37,3 +37,6 @@ packages = ["epibin", "epilib"]
 [tool.setuptools.package-dir]
 epibin = "bin"
 epilib = "lib"
+
+[tool.setuptools.dynamic]
+version = {attr = "epilib.__version__"}

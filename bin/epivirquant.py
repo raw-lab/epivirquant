@@ -9,44 +9,12 @@ import argparse
 
 from epilib import (epivirquant_pairing, epivirquant_decon, 
                              epivirquant_calibration, epivirquant_masks)
-__version__ = '0.1'
-__date__ = '02-16-2026'
-__authors__ = 'Richard Allen White III, Sadie M. Hollenack, Jose Luis Figueroa III'
+import epilib
 
-def main():
-    print(f"""
-    EpiVirQuant: Epifluorescence Viral Quantification Software
-    Version: {__version__}
-    Date: {__date__}
-    """)
-    args = parser.parse_args()
+__version__ = epilib.__version__
+__date__ = epilib.__date__
+__authors__ = epilib.__authors__
 
-    if os.path.exists(args.outDir):
-        print("Deleting old output folder: " + args.outDir)
-        shutil.rmtree(args.outDir)
-    os.mkdir(args.outDir)
-
-    # Step 0: Load Images
-    XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
-
-    # Step 1: Get Optimizaion Box
-    px2nm = args.scaleMetric / args.scaleLength 
-    optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.dConstraint, args.pad, px2nm)
-
-    # Step 2: Blind Deconvolution
-    if args.fSize > 0:
-        [PSF,X,Y] = epivirquant_decon.create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
-    else:
-        PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
-    
-    # Step 3: Get the Correction Coefficent and Quantify the DAPI images
-    CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize, args.cpus)
-    
-    # Step 4: Quantify the FITC images
-    epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
-
-    print("EpiVirQuant complete.")
-    return 0
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.set_defaults()
@@ -91,6 +59,42 @@ optional.add_argument('--version', '-v', action='version',
                     version=f'EpiVirQuant: \n version: {__version__} {__date__}',
                     help='show the version number and exit')
 optional.add_argument("-h", "--help", action="help", help="show this help message and exit")
+
+
+def main():
+    print(f"""
+    EpiVirQuant: Epifluorescence Viral Quantification Software
+    Version: {__version__}
+    Date: {__date__}
+    """)
+    args = parser.parse_args()
+
+    if os.path.exists(args.outDir):
+        print("Deleting old output folder: " + args.outDir)
+        shutil.rmtree(args.outDir)
+    os.mkdir(args.outDir)
+
+    # Step 0: Load Images
+    XB0, XG0, XBVP, snameVP, nCorr, XBsnames, XGsnames, nF = load_images(args.dapi, args.fitc, args.calibration)
+
+    # Step 1: Get Optimizaion Box
+    px2nm = args.scaleMetric / args.scaleLength 
+    optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.dConstraint, args.pad, px2nm)
+
+    # Step 2: Blind Deconvolution
+    if args.fSize > 0:
+        [PSF,X,Y] = epivirquant_decon.create_PSF(args.fSize, args.a, args.b, args.sig, args.r, args.tau, args.v, args.s, args.psfMethod)
+    else:
+        PSF = epivirquant_decon.decon(args.outDir, optBox, args.a, args.b, args.sig, args.r, args.tau, args.s, args.v, args.nMLE_iter, args.psfMethod)
+    
+    # Step 3: Get the Correction Coefficent and Quantify the DAPI images
+    CORR = epivirquant_calibration.get_corrolation(args.outDir, PSF, args.nLR_iter, args.szMetric, px2nm, XB0, XBsnames, nCorr, args.sphereSize, args.cpus)
+    
+    # Step 4: Quantify the FITC images
+    epivirquant_masks.generate_masks(args.outDir, XG0, XGsnames, nF, PSF, args.nLR_iter, args.szMetric, px2nm, CORR, args.SM_constraint)
+
+    print("EpiVirQuant complete.")
+    return 0
 
 def load_images(path_DAPI, path_FITC, path_CALIB):
     fsep = os.sep
