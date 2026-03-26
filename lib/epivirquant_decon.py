@@ -117,7 +117,14 @@ def otf2psf(OTF, fSize):
         PSF = PSF[0:fSize, 0:fSize]
     return PSF
 
-def opt_metrics(Xdec, entVec, energyVec, SEvec):
+def opt_metrics(Xdec:np.ndarray, entVec, energyVec, SEvec):
+    # TODO: CHECK for XDec sanity
+    # option 1) clip out of range values (-1, 1) > np.clip(Xdec, -1, 1, Xdec)
+    # option 2) normalize the values > Xdec = 2 * (Xdec - Xdec.min()) / (Xdec.max() - Xdec.min()) - 1
+    # option 3) Fix before getting here
+    # note 1) Clip was a bit more stable than normalize with a count test
+    np.clip(Xdec, -1, 1, Xdec)
+
     Xdec_uint = img_as_ubyte(Xdec)
     S = shannon_entropy(Xdec_uint, base=2)
     entVec.append(S)
@@ -216,10 +223,10 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
     TEMPCOUNT = 0
     tau = tau_vec[0]
     v = v_vec[0]
+
     for f_size in filters:
         tau = round(tau, 10)
         v = round(v, 10)
-        print(f"fSize: {f_size}; tau: {tau}; v: {v}")
         PSFi, X, Y = create_PSF(f_size, a, b, sig, r, tau, v, s, psfMethod)
         PSFr, Xdec = get_MLE(optBox, f_size, PSFi, nMLE_iter)
         ent_vec, energy_vec, SEvec = opt_metrics(Xdec, ent_vec, energy_vec, SEvec)
@@ -229,17 +236,15 @@ def decon(outDir, optBox, a, b, sig, r, tau, s, v, nMLE_iter, psfMethod):
         for tau in tau_vec:
             tau = round(tau, 10)
             v = round(v, 10)
-            print(f"fSize: {f_size}; tau: {tau}; v: {v}")
             PSFi, X, Y = create_PSF(f_size, a, b, sig, r, tau, v, s, psfMethod)
             PSFr, Xdec = get_MLE(optBox, f_size, PSFi, nMLE_iter)
             ent_vec, energy_vec, SEvec = opt_metrics(Xdec, ent_vec, energy_vec, SEvec)
             count += 1
             psf_params.append([f_size, tau, v, s])
-
             for v in v_vec:
                 tau = round(tau, 10)
                 v = round(v, 10)
-                print(f"fSize: {f_size}; tau: {tau}; v: {v}")
+                #print(f"fSize: {f_size}; tau: {tau}; v: {v}")
                 PSFi, X, Y = create_PSF(f_size, a, b, sig, r, tau, v, s, psfMethod)
                 PSFr, Xdec = get_MLE(optBox, f_size, PSFi, nMLE_iter)
                 ent_vec, energy_vec, SEvec = opt_metrics(Xdec, ent_vec, energy_vec, SEvec)
