@@ -33,10 +33,9 @@ def generate_masks(outDir, XG0, XGsnames, nF, PSF, nLR_iter, szMetric, px2nm, CO
         XG = XG0[i]
         XG_avgPx = np.mean(XG)  # mean pixel value in current working image
         shortname = XGsnames[i];
-        currOut = outDir+fsep+"Step-4_genMasks"+fsep+"genMask"+str(count)+"_"+shortname
-        if os.path.exists(currOut) == False:
-            os.mkdir(currOut);
-        dname = outDir+fsep+"Step-4_genMasks"+fsep+"genMask"+str(count)+"_"+shortname;
+        dname = outDir+fsep+"Step-4_genMasks"+fsep+"genMask_"+shortname
+        if os.path.exists(dname) == False:
+            os.mkdir(dname);
         print("Evaluating image "+str(count)+"/"+str(nF)+": "+shortname)
         plt.imshow(XG,cmap='gray')
         plt.title("XG-"+shortname)

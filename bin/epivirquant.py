@@ -79,7 +79,8 @@ def main():
 
     # Step 1: Get Optimizaion Box
     px2nm = args.scaleMetric / args.scaleLength 
-    optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.dConstraint, args.pad, px2nm)
+    if args.fSize == 0:
+        optBox = epivirquant_pairing.getVP(args.outDir, snameVP, XBVP, args.dConstraint, args.pad, px2nm)
 
     # Step 2: Blind Deconvolution
     if args.fSize > 0:

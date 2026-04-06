@@ -16,10 +16,10 @@ def corr(corrCount, XB, shortname, PSF, nLR_iter, szMetric, px2nm, outDir):
     print("Starting processing for: " + shortname)
     startCorr = time.time();
     XB_avgPx = np.mean(XB)                # Get mean pixel value in current working image 
-    currOut = os.path.join(outDir, "Step-3_Corr", f"CORR{corrCount}_{shortname}")         
+    currOut = os.path.join(outDir, "Step-3_Corr", f"CORR_{shortname}")         
     if os.path.exists(currOut) == False:  # Check if current out directory exists         
        os.mkdir(currOut);                 # Create current out directory
-    dname = os.path.join(outDir, "Step-3_Corr", f"CORR{corrCount}_{shortname}")
+    dname = os.path.join(outDir, "Step-3_Corr", f"CORR_{shortname}")
     plt.imshow(XB,cmap='gray')
     plt.title("XB-"+shortname)
     plt.savefig(os.path.join(dname, f"XB-{shortname}.png"), dpi=150)

@@ -19,7 +19,7 @@ def getVP(outDir, snameVP, XBVP, dConstraint, pad, px2nm):
     plt.figure("XB-" + snameVP)
     plt.imshow(XBVP, cmap='gray')
     plt.title("XB-" + snameVP)
-    plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP}", dpi=150)
+    plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP}.png", dpi=150)
 
     print('o-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-o\n')
     print("Step 1 begin:\nScanning calibration image for VP candidates...")
@@ -30,14 +30,14 @@ def getVP(outDir, snameVP, XBVP, dConstraint, pad, px2nm):
     plt.figure("XB-" + snameVP + ": Otsu mask")
     plt.imshow(otsuMask, cmap='gray')
     plt.title("XB-" + snameVP + ": Otsu mask")
-    plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP} - Otsu mask", dpi=150)
+    plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP} - Otsu mask.png", dpi=150)
     
     otsuMask_eroded = ndimage.binary_erosion(otsuMask, iterations=1)
     
     plt.figure("XB-" + snameVP + ": Otsu mask eroded")
     plt.imshow(otsuMask_eroded, cmap='gray')
     plt.title("XB-" + snameVP + ": Otsu mask eroded")
-    plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP} - Otsu mask eroded", dpi=150)
+    plt.savefig(f"{outDir}{fsep}Step-1_VP{fsep}XB-{snameVP} - Otsu mask eroded.png", dpi=150)
     
     labels = measure.label(otsuMask_eroded)
     rprops = measure.regionprops(labels, intensity_image=XBVP)
