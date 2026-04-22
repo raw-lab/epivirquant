@@ -43,8 +43,6 @@ The informatics point-of-contact for this project is [Dr. Richard Allen White II
 If you have any questions or feedback, please feel free to get in touch by email.  
 [Dr. Richard Allen White III](mailto:rwhit101@charlotte.edu)<br /> 
 [Jose Luis Figueroa III](mailto:jlfiguer@charlotte.edu) <br />
-[Sadie Marie Hollenack](mailto:bhollena@charlotte.edu) <br />
-[Bryan Fulghum](mailto:bfulghu2@charlotte.edu)  <br />
-[Madeline Bellanger](mailto:mbellang@charlotte.edu) <br />
+
 
 Or [open an issue](https://github.com/raw-lab/epivirquant/issues). 
