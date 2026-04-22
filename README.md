@@ -20,29 +20,41 @@ Build the packages:
 ```bash
 pip install .
 ```
+
 Run Epivirquant
 ```bash
 epivirquant.py --dapi "{PATH TO DAPI IMAGES}" --fitc "{PATH TO FITC IMAGES}" --calibration "{PATH TO CALIBRATION IMAGE}"
 ```
 
-Citing EpiVirQuant
--------------
-If you are publishing results obtained using EpiVirQuant
 
-BioRxiv
-Figueroa III JL, Hollenack SM, Bellanger M, Fulghum B, Visscher PT, White III RA. 2024  <br />
+## 📄 License
+
+Creative Commons Attribution-NonCommercial (CC BY-NC 4.0) — See LICENSE file
+
+**Citations:**
+
+If you are publishing results obtained using EpiVirQuant, please cite: <br />  
+- Figueroa III JL, Hollenack SM, Bellanger M, Fulghum B, Visscher PT, White III RA. 2026.  <br />
+Resolving and quantifying viral-like particles via blind deconvolution. [BMC Methods](https://doi.org/10.1186/s44330-026-00060-z). 3:10.  <br />
+
+Pre-Print EpiVirQuant <br />
+- Figueroa III JL, Bellanger M, Fulghum B, Visscher PT, White III RA. 2024  <br />
 Resolving and Quantifying Viral-Like Particles via Blind Deconvolution  <br />
 [BioRxiv](https://doi.org/10.1101/2024.04.21.590467)  <br />
 
+---
 
+## Contributing to EpiVirQuant
 
-Contact
--------
+We welcome contributions of other experts expanding features in EpiVirQuant. Please contact us via support. 
 
-The informatics point-of-contact for this project is [Dr. Richard Allen White III](https://github.com/raw-lab).  
-If you have any questions or feedback, please feel free to get in touch by email.  
-[Dr. Richard Allen White III](mailto:rwhit101@charlotte.edu)<br /> 
-[Jose Luis Figueroa III](mailto:jlfiguer@charlotte.edu) <br />
+---
 
+## 📞 Support
 
-Or [open an issue](https://github.com/raw-lab/epivirquant/issues). 
+- **Issues:** [open an issue](https://github.com/raw-lab/epivirquant/issues).  
+- **Email:** [Dr. Richard Allen White III](mailto:rwhit101@uncc.edu)<br /> 
+             [Jose Luis Figueroa III](mailto:jlfiguer@charlotte.edu) <br />
+---
+
+**Made with ❤️ to prevent people counting VLPs by eye for hours - for the viral ecology community**
